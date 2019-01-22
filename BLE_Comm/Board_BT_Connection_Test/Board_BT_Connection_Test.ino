@@ -8,7 +8,7 @@
 #define MOD_BAUD 19200
 #define BT_BAUD 19200
 
-#define SERIAL_BUFFER_SIZE 5
+#define SERIAL_BUFFER_SIZE 100
 #define NUM_TRANSMISSIONS 1000
 
 SoftwareSerial moduleSerial(SRL_RX, SRL_TX);
@@ -16,11 +16,17 @@ SoftwareSerial moduleSerial(SRL_RX, SRL_TX);
 bool readyToTransmit = false;
 bool doneTransmit = true;
 int transmissionCount = 0;
+bool transmitting = false;
 
 char serialBuffer[SERIAL_BUFFER_SIZE];
+char reversedBuffer[SERIAL_BUFFER_SIZE];
 char blankString[] = "     ";
 char connectedString[] = "%CONN";
 char disconnectedString[] = "%DISC";
+
+#include "circularbuffer.h"
+
+CircularBuffer<2*PACKET_SIZE> bluetoothBuffer;
 
 void setup() {
     // Initialize serial pins
@@ -41,29 +47,32 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available() > 0) {
+  int nb = Serial.available();
+  if (nb > 0) {
+    
     // Read first few bytes of incoming message
-    strcpy(serialBuffer, blankString);
-    Serial.readBytes(serialBuffer, SERIAL_BUFFER_SIZE);
+    if(nb > SERIAL_BUFFER_SIZE)
+    {
+      // we have a problem
+      moduleSerial.write("Linear buffer full");
+      nb = SERIAL_BUFFER_SIZE;
+    }
+    
+    Serial.readBytes(serialBuffer, nb);
+    bluetoothBuffer.write((unsigned char*)serialBuffer, nb);
 
-    if (strcmp(serialBuffer, connectedString) == 0)
+    bool foundPacket = bluetoothBuffer.findPacket();
+    if(foundPacket)
     {
-      // Incoming message was about BT device being connected
-      if (!readyToTransmit and !transmitting) {
-        readyToTransmit = true;
+      bluetoothBuffer.readPacket((unsigned char*)serialBuffer);
+
+      // I'm only reversing the inner data, not the header and check sum
+      for(unsigned i = 1; i < PACKET_SIZE - 1; ++i) {
+        reversedBuffer[i] = serialBuffer[PACKET_SIZE - 2 - i];  
       }
-    }
-    else if (strcmp(serialBuffer, disconnectedString) == 0)
-    {
-      // Incoming message was about BT device being disconnected
-      if (transmitting) {
-        transmitting = false;
-      }
-    }
-    else
-    {
-      // Incoming message unknown
-      // Do something?
+
+      Serial.write(reversedBuffer, PACKET_SIZE);
+      moduleSerial.write("Received packet, reversed it, and returned it \n");
     }
   }
 
