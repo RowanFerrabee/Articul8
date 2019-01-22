@@ -1,0 +1,12 @@
+[submodule "BLE_Comm/Adafruit_Python_BluefruitLE"]
+	path = BLE_Comm/Adafruit_Python_BluefruitLE
+	url = https://github.com/RowanFerrabee/Adafruit_Python_BluefruitLE
+[submodule "BLE_Comm/DMP_To_BT"]
+	path = BLE_Comm/DMP_To_BT
+	url = https://github.com/RowanFerrabee/DMP_To_BT.git
+[submodule "IMU_State_Estimation"]
+	path = IMU_State_Estimation
+	url = https://github.com/RowanFerrabee/IMU_State_Estimation.git
+[submodule "articul8_web"]
+	path = articul8_web
+	url = https://github.com/dudds4/articul8_web.git
