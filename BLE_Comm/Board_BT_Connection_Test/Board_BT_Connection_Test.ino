@@ -13,20 +13,12 @@
 
 SoftwareSerial moduleSerial(SRL_RX, SRL_TX);
 
-bool readyToTransmit = false;
-bool doneTransmit = true;
-int transmissionCount = 0;
-bool transmitting = false;
-
 char serialBuffer[SERIAL_BUFFER_SIZE];
 char reversedBuffer[SERIAL_BUFFER_SIZE];
-char blankString[] = "     ";
-char connectedString[] = "%CONN";
-char disconnectedString[] = "%DISC";
 
 #include "circularbuffer.h"
 
-CircularBuffer<2*PACKET_SIZE> bluetoothBuffer;
+CircularBuffer<4*PACKET_SIZE> bluetoothBuffer;
 
 void setup() {
     // Initialize serial pins
@@ -49,6 +41,9 @@ void setup() {
 void loop() {
   int nb = Serial.available();
   if (nb > 0) {
+    moduleSerial.write("Received data\n");
+    moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
+    moduleSerial.write(" bytes in the BT buffer\n");
     
     // Read first few bytes of incoming message
     if(nb > SERIAL_BUFFER_SIZE)
@@ -61,8 +56,8 @@ void loop() {
     Serial.readBytes(serialBuffer, nb);
     bluetoothBuffer.write((unsigned char*)serialBuffer, nb);
 
-    bool foundPacket = bluetoothBuffer.findPacket();
-    if(foundPacket)
+    int foundPacketResult = bluetoothBuffer.findPacket();
+    if(foundPacketResult == BUFFER_SUCCESS)
     {
       bluetoothBuffer.readPacket((unsigned char*)serialBuffer);
 
@@ -74,23 +69,17 @@ void loop() {
       Serial.write(reversedBuffer, PACKET_SIZE);
       moduleSerial.write("Received packet, reversed it, and returned it \n");
     }
-  }
+    else
+    {
+      moduleSerial.write("Failed to find packet - ErrNo: ");
+      moduleSerial.write(String(foundPacketResult).c_str());
+      moduleSerial.write("\n");
 
-  if (readyToTransmit && !transmitting) {
-    transmissionCount = 0;
-    readyToTransmit = false;
-    transmitting = true;
-  }
-
-  if (transmitting) {
-    // Make a transmission
-    Serial.write('A');
-    moduleSerial.write('A');
-    transmissionCount++;
-
-    if (transmissionCount >= NUM_TRANSMISSIONS) {
-      transmitting = false;
-      readyToTransmit = false; // Not necessary?  
+      moduleSerial.write("Buffer data: ");
+      for (int i = 0; i < bluetoothBuffer.getSize(); i++) {
+        moduleSerial.write(bluetoothBuffer.peek(i));
+      }
+      moduleSerial.write("\n");
     }
   }
 }

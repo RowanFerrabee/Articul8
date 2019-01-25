@@ -5,6 +5,11 @@ typedef unsigned char uchar;
 
 #define PACKET_SIZE 40
 #define SOP 253
+#define BUFFER_SUCCESS 0
+#define BUFFER_INSUF_BYTES 1
+#define BUFFER_NO_HEADER 2
+#define BUFFER_INSUF_BYTES_WITH_HEADER 3
+#define BUFFER_FAILED_CHECKSUM 4
 
 template<unsigned int N>
 class CircularBuffer
@@ -29,11 +34,11 @@ public:
     return sanityCheck == PACKET_SIZE;
   }
   
-  bool findPacket() {
+  int findPacket() {
     unsigned s = getSize();
     
     // if we haven't received enough bytes for a packet, we can just return
-    if (s < PACKET_SIZE) { return false; }
+    if (s < PACKET_SIZE) { return BUFFER_INSUF_BYTES; }
 
     uchar *header = NULL;
     //search with wrap vs search without wrap
@@ -52,13 +57,13 @@ public:
     }
 
     // if we haven't found a header, there's no packet
-    if(header == NULL) { return false; }
+    if(header == NULL) { return BUFFER_NO_HEADER; }
 
     // first byte is header, last byte is checksum
     unsigned headerOffset = header - buf;
 
     // check if there are still enough bytes for a packet
-    if(s < headerOffset + PACKET_SIZE) { return false; }
+    if(s < headerOffset + PACKET_SIZE) { return BUFFER_INSUF_BYTES_WITH_HEADER; }
     
     const unsigned NUM_OVERHEAD_BYTES = 2;
     unsigned o = headerOffset + 1;
@@ -72,10 +77,10 @@ public:
 
     if(checksum == peek(headerOffset + PACKET_SIZE - 1)) {
       packetStart = headerOffset;
-      return true;  
+      return BUFFER_SUCCESS;  
     } else {
       packetStart = -1;
-      return false;
+      return BUFFER_FAILED_CHECKSUM;
     }
 }
 
@@ -89,10 +94,7 @@ public:
   }
   
   int write(uchar *src, unsigned l) {
-      // only copy if we have enough space
-      if(getSpace() < l) { return -1; }
-
-      // do the copy
+      // do the copy - overwriting full buffer
       // two cases; either we can write with or without wrap around
       // case 1: without wrap around
       if(tail + l <= N) {
@@ -106,11 +108,15 @@ public:
       }
 
       // update size and tail
-      _size += l;      
+      _size += l;
       tail += l;
       // modulo the tail
       while(tail >= N) { 
         tail -= N;
+      }
+      // cap the size - will overwrite
+      if (_size > N) {
+        _size = N;
       }
 
       // return number of bytes written
