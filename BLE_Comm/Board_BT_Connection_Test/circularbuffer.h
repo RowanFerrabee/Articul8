@@ -10,6 +10,7 @@ typedef unsigned char uchar;
 #define BUFFER_NO_HEADER 2
 #define BUFFER_INSUF_BYTES_WITH_HEADER 3
 #define BUFFER_FAILED_CHECKSUM 4
+#define BUFFER_WHATS_GOING_ON 5
 
 template<unsigned int N>
 class CircularBuffer
@@ -19,18 +20,25 @@ public:
   unsigned getSize() { return _size; }
   unsigned getSpace() { return N - _size; }
 
+  int errorFlag;
+  int getError() { return errorFlag; }
+  int getPacketStart() { return packetStart; }
+  
   bool readPacket(uchar *dst) {
-    if(packetStart < 0) { return false; }
+    if(packetStart < 0 || packetStart > _size) { return false; }
 
     // update size and head to skip bytes before start of packet
     _size -= packetStart;
     head += packetStart;
-    // module the head
+    
+    // modulo the head
     while(head >= N) { 
         head -= N;
     }
 
-    unsigned sanityCheck = read(dst, PACKET_SIZE);
+    int sanityCheck = read(dst, PACKET_SIZE);
+    
+    packetStart = -1;   
     return sanityCheck == PACKET_SIZE;
   }
   
@@ -41,6 +49,7 @@ public:
     if (s < PACKET_SIZE) { return BUFFER_INSUF_BYTES; }
 
     uchar *header = NULL;
+    
     //search with wrap vs search without wrap
     // case 1: no wrap 
     if(head + s <= N) {
@@ -60,26 +69,33 @@ public:
     if(header == NULL) { return BUFFER_NO_HEADER; }
 
     // first byte is header, last byte is checksum
-    unsigned headerOffset = header - buf;
+    unsigned headerLinOffset = header - buf;
+    unsigned headerOffset = headerLinOffset >= head ? headerLinOffset - head : (N - head) + headerLinOffset;
+    int bytesLeft = s - (headerOffset - head);
 
     // check if there are still enough bytes for a packet
-    if(s < headerOffset + PACKET_SIZE) { return BUFFER_INSUF_BYTES_WITH_HEADER; }
+    if(bytesLeft < PACKET_SIZE) { return BUFFER_INSUF_BYTES_WITH_HEADER; }
     
     const unsigned NUM_OVERHEAD_BYTES = 2;
-    unsigned o = headerOffset + 1;
+    unsigned o = headerLinOffset + 1;
     uchar checksum = 0;
     for(unsigned i = 0; i < PACKET_SIZE - NUM_OVERHEAD_BYTES; ++i)
     {
         // modulo offset
-        while(o > N) o -= N;        
+        while(o >= N) o -= N;        
         checksum += buf[o++];
     }
 
-    if(checksum == peek(headerOffset + PACKET_SIZE - 1)) {
+    while(o >= N) o -= N; 
+    uchar receivedChecksum = buf[o];
+
+    if(checksum == receivedChecksum) {
       packetStart = headerOffset;
-      return BUFFER_SUCCESS;  
+      return BUFFER_SUCCESS;
+      
     } else {
       packetStart = -1;
+      errorFlag = checksum;
       return BUFFER_FAILED_CHECKSUM;
     }
 }
@@ -96,6 +112,7 @@ public:
   int write(uchar *src, unsigned l) {
       // do the copy - overwriting full buffer
       // two cases; either we can write with or without wrap around
+      
       // case 1: without wrap around
       if(tail + l <= N) {
         memcpy(buf + tail, src, l);
@@ -107,18 +124,20 @@ public:
         memcpy(buf, src + x, l - x); 
       }
 
-      // update size and tail
-      _size += l;
+      // update size / tail / head
+      int overwriting = _size + l - N;
       tail += l;
-      // modulo the tail
-      while(tail >= N) { 
-        tail -= N;
-      }
-      // cap the size - will overwrite
-      if (_size > N) {
-        _size = N;
-      }
+      while(tail >= N) { tail -= N; }
 
+      if(overwriting > 0) {
+        _size = N;
+        head += overwriting;
+        while(head >= N) { head -= N; } 
+                   
+      } else {
+        _size += l;  
+      }
+      
       // return number of bytes written
       return l;
   }
@@ -142,6 +161,7 @@ public:
     // update size and head
     _size -= l;
     head += l;
+    
     // module the head
     while(head >= N) { 
         head -= N;

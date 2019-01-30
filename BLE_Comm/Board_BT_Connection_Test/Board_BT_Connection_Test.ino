@@ -13,6 +13,8 @@
 
 SoftwareSerial moduleSerial(SRL_RX, SRL_TX);
 
+char streamCmd[] =  "STREAMPLSSTREAMPLSSTREAMPLSSTREAMPLSSS";
+char okResponse[] = "OKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOK";
 char serialBuffer[SERIAL_BUFFER_SIZE];
 char reversedBuffer[SERIAL_BUFFER_SIZE];
 
@@ -43,7 +45,7 @@ void loop() {
   if (nb > 0) {
     moduleSerial.write("Received data\n");
     moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
-    moduleSerial.write(" bytes in the BT buffer\n");
+   // moduleSerial.write(" bytes in the BT buffer\n");
     
     // Read first few bytes of incoming message
     if(nb > SERIAL_BUFFER_SIZE)
@@ -55,19 +57,54 @@ void loop() {
     
     Serial.readBytes(serialBuffer, nb);
     bluetoothBuffer.write((unsigned char*)serialBuffer, nb);
+    
+    moduleSerial.write("After write, ");
+    moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
+    moduleSerial.write(" bytes in the BT buffer\n");
 
     int foundPacketResult = bluetoothBuffer.findPacket();
     if(foundPacketResult == BUFFER_SUCCESS)
     {
-      bluetoothBuffer.readPacket((unsigned char*)serialBuffer);
+      int packetStart = bluetoothBuffer.getPacketStart();
+      int invalid = 0;
+      uchar checksum = 0;
+      if(bluetoothBuffer.peek(packetStart) != SOP) { invalid++; }
+      for(int j = 1; j < PACKET_SIZE - 1 && !invalid; ++j)
+      {
+        checksum += bluetoothBuffer.peek(packetStart + j);
+      }
+      if(bluetoothBuffer.peek(packetStart + PACKET_SIZE - 1) != checksum) { invalid++; }
+
+      if(invalid)
+      {
+        moduleSerial.write("find packet is fking up still\n");  
+      }
+      
+      if (!bluetoothBuffer.readPacket((unsigned char*)serialBuffer))
+      {
+        moduleSerial.write("readPacket failed. Now, ");
+        moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
+        moduleSerial.write(" bytes in the BT buffer\n");
+      }
+
+      reversedBuffer[0] = SOP;
+      reversedBuffer[PACKET_SIZE - 1] = serialBuffer[PACKET_SIZE - 1];
 
       // I'm only reversing the inner data, not the header and check sum
       for(unsigned i = 1; i < PACKET_SIZE - 1; ++i) {
-        reversedBuffer[i] = serialBuffer[PACKET_SIZE - 2 - i];  
+        reversedBuffer[i] = serialBuffer[PACKET_SIZE - 1 - i];  
       }
 
       Serial.write(reversedBuffer, PACKET_SIZE);
       moduleSerial.write("Received packet, reversed it, and returned it \n");
+      moduleSerial.write(serialBuffer, PACKET_SIZE);
+      
+    }
+    else if(foundPacketResult == 4)
+    {
+      moduleSerial.write("Checksum failed, value was: ");
+      moduleSerial.write(String(bluetoothBuffer.getError()).c_str());
+      moduleSerial.write("\n");
     }
     else
     {
@@ -76,7 +113,7 @@ void loop() {
       moduleSerial.write("\n");
 
       moduleSerial.write("Buffer data: ");
-      for (int i = 0; i < bluetoothBuffer.getSize(); i++) {
+      for (unsigned i = 0; i < bluetoothBuffer.getSize(); i++) {
         moduleSerial.write(bluetoothBuffer.peek(i));
       }
       moduleSerial.write("\n");
