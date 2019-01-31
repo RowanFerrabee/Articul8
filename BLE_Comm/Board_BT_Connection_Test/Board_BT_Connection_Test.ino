@@ -19,8 +19,11 @@ char serialBuffer[SERIAL_BUFFER_SIZE];
 char reversedBuffer[SERIAL_BUFFER_SIZE];
 
 #include "circularbuffer.h"
-
 CircularBuffer<4*PACKET_SIZE> bluetoothBuffer;
+
+//#include "AMessage.h"
+//template <typename MessageType> 
+//int sendMessage(const MessageType &m) { return ArticulateMessages::writeMessage(Serial, m); }
 
 void setup() {
     // Initialize serial pins
@@ -43,8 +46,8 @@ void setup() {
 void loop() {
   int nb = Serial.available();
   if (nb > 0) {
-    moduleSerial.write("Received data\n");
-    moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
+   // moduleSerial.write("Received data: ");
+   // moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
    // moduleSerial.write(" bytes in the BT buffer\n");
     
     // Read first few bytes of incoming message
@@ -57,34 +60,13 @@ void loop() {
     
     Serial.readBytes(serialBuffer, nb);
     bluetoothBuffer.write((unsigned char*)serialBuffer, nb);
-    
-    moduleSerial.write("After write, ");
-    moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
-    moduleSerial.write(" bytes in the BT buffer\n");
 
     int foundPacketResult = bluetoothBuffer.findPacket();
     if(foundPacketResult == BUFFER_SUCCESS)
     {
-      int packetStart = bluetoothBuffer.getPacketStart();
-      int invalid = 0;
-      uchar checksum = 0;
-      if(bluetoothBuffer.peek(packetStart) != SOP) { invalid++; }
-      for(int j = 1; j < PACKET_SIZE - 1 && !invalid; ++j)
-      {
-        checksum += bluetoothBuffer.peek(packetStart + j);
-      }
-      if(bluetoothBuffer.peek(packetStart + PACKET_SIZE - 1) != checksum) { invalid++; }
-
-      if(invalid)
-      {
-        moduleSerial.write("find packet is fking up still\n");  
-      }
-      
       if (!bluetoothBuffer.readPacket((unsigned char*)serialBuffer))
       {
-        moduleSerial.write("readPacket failed. Now, ");
-        moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
-        moduleSerial.write(" bytes in the BT buffer\n");
+        moduleSerial.write("readPacket failed!");
       }
 
       reversedBuffer[0] = SOP;
@@ -96,9 +78,9 @@ void loop() {
       }
 
       Serial.write(reversedBuffer, PACKET_SIZE);
-      moduleSerial.write("Received packet, reversed it, and returned it \n");
-      moduleSerial.write(serialBuffer, PACKET_SIZE);
-      
+//      moduleSerial.write("Received packet, reversed it, and returned it.\n Sent: ");
+//      moduleSerial.write(reversedBuffer, PACKET_SIZE);
+//      moduleSerial.write("\n");
     }
     else if(foundPacketResult == 4)
     {
@@ -106,17 +88,17 @@ void loop() {
       moduleSerial.write(String(bluetoothBuffer.getError()).c_str());
       moduleSerial.write("\n");
     }
-    else
-    {
-      moduleSerial.write("Failed to find packet - ErrNo: ");
-      moduleSerial.write(String(foundPacketResult).c_str());
-      moduleSerial.write("\n");
-
-      moduleSerial.write("Buffer data: ");
-      for (unsigned i = 0; i < bluetoothBuffer.getSize(); i++) {
-        moduleSerial.write(bluetoothBuffer.peek(i));
-      }
-      moduleSerial.write("\n");
-    }
+//    else
+//    {
+//      moduleSerial.write("Failed to find packet - ErrNo: ");
+//      moduleSerial.write(String(foundPacketResult).c_str());
+//      moduleSerial.write("\n");
+//
+//      moduleSerial.write("Buffer data: ");
+//      for (unsigned i = 0; i < bluetoothBuffer.getSize(); i++) {
+//        moduleSerial.write(bluetoothBuffer.peek(i));
+//      }
+//      moduleSerial.write("\n");
+//    }
   }
 }

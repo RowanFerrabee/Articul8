@@ -3,8 +3,9 @@
 
 typedef unsigned char uchar;
 
-#define PACKET_SIZE 40
-#define SOP 253
+#include <stddef.h>
+#include "msg_defs.h"
+
 #define BUFFER_SUCCESS 0
 #define BUFFER_INSUF_BYTES 1
 #define BUFFER_NO_HEADER 2
@@ -17,6 +18,8 @@ class CircularBuffer
 {
 public:
 
+  unsigned getHead() { return head; }
+  unsigned getTail() { return tail; }
   unsigned getSize() { return _size; }
   unsigned getSpace() { return N - _size; }
 
@@ -25,7 +28,7 @@ public:
   int getPacketStart() { return packetStart; }
   
   bool readPacket(uchar *dst) {
-    if(packetStart < 0 || packetStart > _size) { return false; }
+    if(packetStart < 0 || packetStart > (signed)_size) { return false; }
 
     // update size and head to skip bytes before start of packet
     _size -= packetStart;
@@ -38,11 +41,13 @@ public:
 
     int sanityCheck = read(dst, PACKET_SIZE);
     
-    packetStart = -1;   
+    packetStart = -1;
     return sanityCheck == PACKET_SIZE;
   }
   
   int findPacket() {
+    
+    packetStart = -1;
     unsigned s = getSize();
     
     // if we haven't received enough bytes for a packet, we can just return
@@ -105,7 +110,7 @@ public:
     if(offset > getSize()) return 0;
     offset = head + offset;
     // modulo
-    while(offset > N) offset -= N;
+    while(offset >= N) offset -= N;
     return buf[offset];
   }
   
@@ -143,6 +148,7 @@ public:
   }
 
   int read(uchar *dst, unsigned l) {
+    
     if(getSize() < l) { return -1; }
 
     // do the copy
@@ -155,7 +161,7 @@ public:
     } else {
       unsigned x = N - head;
       memcpy(dst, buf + head, x);
-      memcpy(dst, buf, l - x); 
+      memcpy(dst + x, buf, l - x); 
     }
 
     // update size and head
