@@ -8,19 +8,22 @@
 #define MOD_BAUD 19200
 #define BT_BAUD 19200
 
-#define SERIAL_BUFFER_SIZE 5
+#define SERIAL_BUFFER_SIZE 100
 #define NUM_TRANSMISSIONS 1000
 
 SoftwareSerial moduleSerial(SRL_RX, SRL_TX);
 
-bool readyToTransmit = false;
-bool doneTransmit = true;
-int transmissionCount = 0;
-
+char streamCmd[] =  "STREAMPLSSTREAMPLSSTREAMPLSSTREAMPLSSS";
+char okResponse[] = "OKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOK";
 char serialBuffer[SERIAL_BUFFER_SIZE];
-char blankString[] = "     ";
-char connectedString[] = "%CONN";
-char disconnectedString[] = "%DISC";
+char reversedBuffer[SERIAL_BUFFER_SIZE];
+
+#include "circularbuffer.h"
+CircularBuffer<4*PACKET_SIZE> bluetoothBuffer;
+
+//#include "AMessage.h"
+//template <typename MessageType> 
+//int sendMessage(const MessageType &m) { return ArticulateMessages::writeMessage(Serial, m); }
 
 void setup() {
     // Initialize serial pins
@@ -41,47 +44,61 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available() > 0) {
+  int nb = Serial.available();
+  if (nb > 0) {
+   // moduleSerial.write("Received data: ");
+   // moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
+   // moduleSerial.write(" bytes in the BT buffer\n");
+    
     // Read first few bytes of incoming message
-    strcpy(serialBuffer, blankString);
-    Serial.readBytes(serialBuffer, SERIAL_BUFFER_SIZE);
-
-    if (strcmp(serialBuffer, connectedString) == 0)
+    if(nb > SERIAL_BUFFER_SIZE)
     {
-      // Incoming message was about BT device being connected
-      if (!readyToTransmit and !transmitting) {
-        readyToTransmit = true;
+      // we have a problem
+      moduleSerial.write("Linear buffer full");
+      nb = SERIAL_BUFFER_SIZE;
+    }
+    
+    Serial.readBytes(serialBuffer, nb);
+    bluetoothBuffer.write((unsigned char*)serialBuffer, nb);
+
+    int foundPacketResult = bluetoothBuffer.findPacket();
+    if(foundPacketResult == BUFFER_SUCCESS)
+    {
+      if (!bluetoothBuffer.readPacket((unsigned char*)serialBuffer))
+      {
+        moduleSerial.write("readPacket failed!");
       }
-    }
-    else if (strcmp(serialBuffer, disconnectedString) == 0)
-    {
-      // Incoming message was about BT device being disconnected
-      if (transmitting) {
-        transmitting = false;
+
+      reversedBuffer[0] = SOP;
+      reversedBuffer[PACKET_SIZE - 1] = serialBuffer[PACKET_SIZE - 1];
+
+      // I'm only reversing the inner data, not the header and check sum
+      for(unsigned i = 1; i < PACKET_SIZE - 1; ++i) {
+        reversedBuffer[i] = serialBuffer[PACKET_SIZE - 1 - i];  
       }
+
+      Serial.write(reversedBuffer, PACKET_SIZE);
+//      moduleSerial.write("Received packet, reversed it, and returned it.\n Sent: ");
+//      moduleSerial.write(reversedBuffer, PACKET_SIZE);
+//      moduleSerial.write("\n");
     }
-    else
+    else if(foundPacketResult == 4)
     {
-      // Incoming message unknown
-      // Do something?
+      moduleSerial.write("Checksum failed, value was: ");
+      moduleSerial.write(String(bluetoothBuffer.getError()).c_str());
+      moduleSerial.write("\n");
     }
-  }
-
-  if (readyToTransmit && !transmitting) {
-    transmissionCount = 0;
-    readyToTransmit = false;
-    transmitting = true;
-  }
-
-  if (transmitting) {
-    // Make a transmission
-    Serial.write('A');
-    moduleSerial.write('A');
-    transmissionCount++;
-
-    if (transmissionCount >= NUM_TRANSMISSIONS) {
-      transmitting = false;
-      readyToTransmit = false; // Not necessary?  
-    }
+//    else
+//    {
+//      moduleSerial.write("Failed to find packet - ErrNo: ");
+//      moduleSerial.write(String(foundPacketResult).c_str());
+//      moduleSerial.write("\n");
+//
+//      moduleSerial.write("Buffer data: ");
+//      for (unsigned i = 0; i < bluetoothBuffer.getSize(); i++) {
+//        moduleSerial.write(bluetoothBuffer.peek(i));
+//      }
+//      moduleSerial.write("\n");
+//    }
   }
 }
