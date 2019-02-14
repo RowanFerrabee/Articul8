@@ -4,11 +4,11 @@ import processing.serial.*;
 PImage textures[];
 String texNames[] = {"front.png", "back.png", "bottom.png", "top.png", "right.png", "left.png"};
 
-Serial imuPort;
-String portName = "/dev/cu.usbmodem1431";
+//Serial imuPort;
+//String portName = "/dev/cu.usbmodem1431";
 
 Client imuClient;
-int socketPort = 5204;
+int socketPort = 5432;
 
 float rotx = PI/4;
 float roty = PI/4;
@@ -32,7 +32,7 @@ void setup() {
   fill(255);
   stroke(color(44,48,32));
 
-  imuPort = new Serial(this, portName, 38400);
+  //imuPort = new Serial(this, portName, 38400);
   imuClient = new Client(this, "127.0.0.1", socketPort);
   
   // Wait for MPU to set up
