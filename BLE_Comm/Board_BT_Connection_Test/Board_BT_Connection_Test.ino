@@ -49,11 +49,17 @@ void setupBluetooth()
   setBtAwake(true); // probably not relevant unless we put it in a sleeping mode  
 }
 
+#include "Wire.h"
 #define BATT_ALARM 3
 void batteryAlarmInterrupt()
 {
   // do something here :(  
 }
+
+#define READ(addr) (addr | 0x01)
+#define WRITE(addr) (addr)
+#define FUEL_GAUGE ADDRESS 0x16
+#define ALARM_L_VOLT_REG 0x14
 
 void setupBatteryInterrupt()
 {
@@ -61,10 +67,41 @@ void setupBatteryInterrupt()
   delay(1);
 
   attachInterrupt(digitalPinToInterrupt(BATT_ALARM), batteryAlarmInterrupt, LOW);
+
+  // tell the fuel gauge to alarm when battery voltage goes below (x)
+
+  uint16_t mV = 3600;
+  uint8_t lb = mV & 0xFF;
+  uint8_t hb = (mV >> 8) & 0xFF;
+
+  // not implemented :(
+  
+//  uint8_t pwd = 0x87;
+//
+//  uint32_t msg = WRITE(FUEL_GAUGE_ADDRESS);
+//  
+//  msg = msg << 8;
+//  msg |= ALARM_L_VOLT_REG;
+//  msg = msg << 8;
+//  msg |= lb;
+//  msg = msg << 8l
+//  msg |= hb;
+//  
+//  // compute crc 8 atm for the msg
+//
+//  
+//  
+//  Wire.beginTransmission(WRITE(FUEL_GAUGE_ADDRESS));
+//  Wire.write(ALARM_L_VOLT_REG);
+//  Wire.write(lb);
+//  Wire.write(hb);
+//
+//  Wire.endTransmission(true);
 }
 
 void setup() {
 
+    Wire.begin();
     setupBluetooth();
 
 #if(TEST == INTERRUPT_TEST)
