@@ -1,104 +1,118 @@
+// Select which type of test you'd like
+// only one define supercedes following ones
 
-// Communication bridge between module and laptop for debugging
-#include <SoftwareSerial.h>
+#define LOOPBACK_TEST 0
+#define INTERRUPT_TEST 1
 
-#define BT_RST 4
-#define SRL_RX 12
-#define SRL_TX 11
-#define MOD_BAUD 19200
+#define TEST LOOPBACK_TEST
+
+// ---------- actual code stuff ----------
+
+#define BT_RST_N 4
+#define BT_SW_BTN 5
+#define BT_WAKEUP 6
+
 #define BT_BAUD 19200
+
+#define MOD_BAUD 19200
 
 #define SERIAL_BUFFER_SIZE 100
 #define NUM_TRANSMISSIONS 1000
 
-SoftwareSerial moduleSerial(SRL_RX, SRL_TX);
-
-char streamCmd[] =  "STREAMPLSSTREAMPLSSTREAMPLSSTREAMPLSSS";
-char okResponse[] = "OKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOK";
 char serialBuffer[SERIAL_BUFFER_SIZE];
-char reversedBuffer[SERIAL_BUFFER_SIZE];
 
-#include "circularbuffer.h"
-CircularBuffer<4*PACKET_SIZE> bluetoothBuffer;
+#define BtSerial Serial1
 
-//#include "AMessage.h"
-//template <typename MessageType> 
-//int sendMessage(const MessageType &m) { return ArticulateMessages::writeMessage(Serial, m); }
+void resetBT()
+{
+    pinMode(BT_RST_N, OUTPUT);
+    delay(10);
+    digitalWrite(BT_RST_N, LOW);
+    delay(1);
+    digitalWrite(BT_RST_N, HIGH);
+    delay(1);
+    pinMode(BT_RST_N, INPUT); // leave the reset pin in a high impedance state
+}
+
+void setBtOn(bool on) { digitalWrite(BT_SW_BTN, on ? HIGH : LOW); }
+void setBtAwake(bool awake) { digitalWrite(BT_WAKEUP, awake ? LOW : HIGH); }
+
+void setupBluetooth()
+{
+  pinMode(BT_RST_N, INPUT);  // leave the reset pin in a high impedance state
+  pinMode(BT_SW_BTN, OUTPUT);
+  pinMode(BT_WAKEUP, OUTPUT);
+
+  delay(10);
+
+  setBtOn(true);
+  setBtAwake(true); // probably not relevant unless we put it in a sleeping mode  
+}
+
+#define BATT_ALARM 3
+void batteryAlarmInterrupt()
+{
+  // do something here :(  
+}
+
+void setupBatteryInterrupt()
+{
+  pinMode(BATT_ALARM, INPUT);
+  delay(1);
+
+  attachInterrupt(digitalPinToInterrupt(BATT_ALARM), batteryAlarmInterrupt, LOW);
+}
 
 void setup() {
-    // Initialize serial pins
-    pinMode(BT_RST, OUTPUT);
-    pinMode(SRL_RX, INPUT);
-    pinMode(SRL_TX, OUTPUT);
 
-    digitalWrite(BT_RST, HIGH);
-  
-    // Initialize serial port
-    Serial.begin(BT_BAUD);
-    moduleSerial.begin(MOD_BAUD);
+    setupBluetooth();
+
+#if(TEST == INTERRUPT_TEST)
+    setupBatteryInterrupt();
+#endif
+
+    // Initialize serial
+    Serial.begin(MOD_BAUD);
+    BtSerial.begin(BT_BAUD);
 
     Serial.flush();
-    moduleSerial.flush();
+    BtSerial.flush();
+
+
+#if(TEST == INTERRUPT_TEST)
+
+    setupBatteryInterrupt();
+    
+    
+#endif
 
     delay(10);
 }
 
-void loop() {
-  int nb = Serial.available();
-  if (nb > 0) {
-   // moduleSerial.write("Received data: ");
-   // moduleSerial.write(String(bluetoothBuffer.getSize()).c_str());
-   // moduleSerial.write(" bytes in the BT buffer\n");
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
+
+void loopbackSerial(HardwareSerial &ser)
+{
+  int nb = ser.available();
+  if (nb > 0) 
+  {
     
-    // Read first few bytes of incoming message
-    if(nb > SERIAL_BUFFER_SIZE)
-    {
-      // we have a problem
-      moduleSerial.write("Linear buffer full");
-      nb = SERIAL_BUFFER_SIZE;
-    }
+    nb = MIN(nb, SERIAL_BUFFER_SIZE);
+    ser.readBytes(serialBuffer, nb);
     
-    Serial.readBytes(serialBuffer, nb);
-    bluetoothBuffer.write((unsigned char*)serialBuffer, nb);
-
-    int foundPacketResult = bluetoothBuffer.findPacket();
-    if(foundPacketResult == BUFFER_SUCCESS)
-    {
-      if (!bluetoothBuffer.readPacket((unsigned char*)serialBuffer))
-      {
-        moduleSerial.write("readPacket failed!");
-      }
-
-      reversedBuffer[0] = SOP;
-      reversedBuffer[PACKET_SIZE - 1] = serialBuffer[PACKET_SIZE - 1];
-
-      // I'm only reversing the inner data, not the header and check sum
-      for(unsigned i = 1; i < PACKET_SIZE - 1; ++i) {
-        reversedBuffer[i] = serialBuffer[PACKET_SIZE - 1 - i];  
-      }
-
-      Serial.write(reversedBuffer, PACKET_SIZE);
-//      moduleSerial.write("Received packet, reversed it, and returned it.\n Sent: ");
-//      moduleSerial.write(reversedBuffer, PACKET_SIZE);
-//      moduleSerial.write("\n");
-    }
-    else if(foundPacketResult == 4)
-    {
-      moduleSerial.write("Checksum failed, value was: ");
-      moduleSerial.write(String(bluetoothBuffer.getError()).c_str());
-      moduleSerial.write("\n");
-    }
-//    else
-//    {
-//      moduleSerial.write("Failed to find packet - ErrNo: ");
-//      moduleSerial.write(String(foundPacketResult).c_str());
-//      moduleSerial.write("\n");
-//
-//      moduleSerial.write("Buffer data: ");
-//      for (unsigned i = 0; i < bluetoothBuffer.getSize(); i++) {
-//        moduleSerial.write(bluetoothBuffer.peek(i));
-//      }
-//      moduleSerial.write("\n");
-//    }
+    Serial.write((unsigned char*)serialBuffer, nb);
+    BtSerial.write((unsigned char*)serialBuffer, nb);
   }
+  
+}
+
+void loop() {
+
+#if(TEST == LOOPBACK_TEST)
+
+  loopbackSerial(Serial);
+  loopbackSerial(BtSerial);
+
+#endif
+
 }
