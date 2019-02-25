@@ -1,10 +1,13 @@
+//#include "lc709203f_params.h"
+
 // Select which type of test you'd like
 // only one define supercedes following ones
 
-#define LOOPBACK_TEST 0
-#define INTERRUPT_TEST 1
+#define LOOPBACK_TEST 0         // tests serial and bluetooth
+#define FG_TEST 1               // tests i2c comm with the fuel gauge
+#define FG_INTERRUPT_TEST 2     // tests the interrupt with the fuel gauge
 
-#define TEST LOOPBACK_TEST
+#define TEST INTERRUPT_TEST
 
 // ---------- actual code stuff ----------
 
@@ -70,11 +73,11 @@ void setupBatteryInterrupt()
 
   // tell the fuel gauge to alarm when battery voltage goes below (x)
 
-  uint16_t mV = 3600;
-  uint8_t lb = mV & 0xFF;
-  uint8_t hb = (mV >> 8) & 0xFF;
-
   // not implemented :(
+  
+//  uint16_t mV = 3600;
+//  uint8_t lb = mV & 0xFF;
+//  uint8_t hb = (mV >> 8) & 0xFF;
   
 //  uint8_t pwd = 0x87;
 //
