@@ -91,7 +91,7 @@ bool checkForIMUPacket(void* dstPtr, int* len)
   
   // if DMP programming failed, don't try to do anything
   if (!dmpReady) {
-    articul8Logger.println("DMP programming failed");
+    Serial.println("DMP programming failed");
     return false;
   }
 
@@ -111,7 +111,7 @@ bool checkForIMUPacket(void* dstPtr, int* len)
       // reset so we can continue cleanly
       mpu.resetFIFO();
       fifoCount = mpu.getFIFOCount();
-      articul8Logger.println(F("FIFO overflow!"));
+      Serial.println(F("FIFO overflow!"));
 
   // otherwise, check for DMP data ready interrupt (this should happen frequently)
   } else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {

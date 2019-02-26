@@ -5,7 +5,6 @@
 // for both classes must be in the include path of your project
 
 #include "msg_defs.h"
-#include "logging.h"
 #include "lra_man.h"
 #include "helper_3dmath.h"
 #include "MPU6050_6Axis_MotionApps20.h"

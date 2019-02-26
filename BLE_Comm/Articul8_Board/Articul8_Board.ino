@@ -1,6 +1,5 @@
 
 #include "msg_defs.h"
-#include "logging.h"
 #include "bt_man.h"
 #include "imu_man.h"
 #include "lra_man.h"
@@ -8,6 +7,7 @@
 
 #define BT_RST 4
 #define BT_BAUD 19200
+#define LOGGER_BAUD 19200
 
 Packet btCommand;
 FSM_Man fsm_man = FSM_Man();
@@ -27,26 +27,16 @@ void initAckPacket()
   ackPacket.as_struct.checksum = SOP + ACK;
 }
 
-void initLogger()
-{;
-  // Initialize serial pins
-  pinMode(SRL_RX, INPUT);
-  pinMode(SRL_TX, OUTPUT);
-  delay(10);
-
-  articul8Logger.begin(LOGGER_BAUD);
-  articul8Logger.flush();
-}
-
 void setup() {
 
   // Initialize bluetooth pins through serial port
   pinMode(BT_RST, OUTPUT);
   digitalWrite(BT_RST, HIGH);
-  Serial.begin(BT_BAUD);
+  BtSerial.begin(BT_BAUD);
+  BtSerial.flush();
+  Serial.begin(LOGGER_BAUD);
   Serial.flush();
 
-  initLogger();
   initAckPacket();
   initI2C();
 
@@ -55,11 +45,11 @@ void setup() {
   bool did_connect = false;
   mpu.initialize();
   did_connect = mpu.testConnection();
-  if(!did_connect) { articul8Logger.println("IMU testConnection failed"); while(1); }
+  if(!did_connect) { Serial.println("IMU testConnection failed"); while(1); }
 
   bool did_init = false;
   did_init = initDMP(0,0,0,0,0,0);
-  if(!did_init) { articul8Logger.println("DMP Init failed"); while(1); }
+  if(!did_init) { Serial.println("DMP Init failed"); while(1); }
 
   dmpReady = true;
   

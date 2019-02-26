@@ -2,7 +2,6 @@
 #define ARTICUL8_FSM_MAN_H
 
 #include "msg_defs.h"
-#include "logging.h"
 #include "imu_man.h"
 #include <Arduino.h>
 
@@ -81,8 +80,8 @@ public:
         break;
 
       default:
-        articul8Logger.print("FSM in invalid state: ");
-        articul8Logger.println(state);
+        Serial.print("FSM in invalid state: ");
+        Serial.println(state);
         break;
     }
   }

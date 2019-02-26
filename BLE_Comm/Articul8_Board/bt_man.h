@@ -2,10 +2,11 @@
 #define BT_MAN_H
 
 #include "msg_defs.h"
-#include "logging.h"
 #include "circular_buffer.h"
 
 #define SERIAL_BUFFER_SIZE 100
+
+#define BtSerial Serial1
 
 CircularBuffer<4*PACKET_SIZE> bluetoothBuffer;
 char serialRxBuffer[SERIAL_BUFFER_SIZE];
@@ -25,22 +26,22 @@ void populateBTPacket(uchar* packetBytes)
 
 void sendBTPacket(uchar* packetBytes)
 {
-  Serial.write(packetBytes, PACKET_SIZE);
+  BtSerial.write(packetBytes, PACKET_SIZE);
 }
 
 bool checkForBTPacket(uchar* dst)
 {
-  int nb = Serial.available();
+  int nb = BtSerial.available();
   
   if (nb > 0) {
     
     if(nb > SERIAL_BUFFER_SIZE) {
       
-      articul8Logger.write("Linear buffer full");     // This is a problem
+      Serial.write("Linear buffer full");     // This is a problem
       nb = SERIAL_BUFFER_SIZE;
     }
     
-    Serial.readBytes(serialRxBuffer, nb);             // Read incoming message    
+    BtSerial.readBytes(serialRxBuffer, nb);             // Read incoming message    
     bluetoothBuffer.write((unsigned char*)serialRxBuffer, nb);
 
     int foundPacketResult = bluetoothBuffer.findPacket();
@@ -49,7 +50,7 @@ bool checkForBTPacket(uchar* dst)
       // Populate buffer with first complete BT packet
       if (bluetoothBuffer.readPacket(dst))
       {
-        articul8Logger.println("Received BT packet");
+        Serial.println("Received BT packet");
         return true;
       }
     }

@@ -2,7 +2,6 @@
 #define LRA_MAN_H
 
 #include <Wire.h>
-#include "logging.h"
 #include "msg_defs.h"
 
 #define TCA9554_ADDR (0x38)
