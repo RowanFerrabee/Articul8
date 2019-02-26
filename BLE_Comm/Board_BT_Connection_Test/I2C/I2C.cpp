@@ -60,12 +60,9 @@
 #endif
 
 #include <inttypes.h>
-#include "I2C.hpp"
+#include "I2C.h"
 
-#define TWDR TWDR0
-#define TWCR TWCR0
-#define TWSR TWSR0
-#define TWBR TWBR0
+
 
 uint8_t I2C::bytesAvailable = 0;
 uint8_t I2C::bufferIndex = 0;
@@ -83,7 +80,7 @@ I2C::I2C()
 
 void I2C::begin()
 {
-  #if 1 || defined( __AVR_ATmega168__) || defined(__AVR_ATmega8__) || defined(__AVR_ATmega328P__)
+  #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega8__) || defined(__AVR_ATmega328P__)
     // activate internal pull-ups for twi
     // as per note from atmega8 manual pg167
     sbi(PORTC, 4);
@@ -161,7 +158,7 @@ void I2C::scan()
   uint16_t tempTime = timeOutDelay;
   timeOut(80);
   uint8_t totalDevicesFound = 0;
-  Serial.println(F("Scanning for devices...please wait"));
+  Serial.println("Scanning for devices...please wait");
   Serial.println();
   for(uint8_t s = 0; s <= 0x7F; s++)
   {
@@ -175,21 +172,21 @@ void I2C::scan()
     {
       if(returnStatus == 1)
       {
-        Serial.println(F("There is a problem with the bus, could not complete scan"));
+        Serial.println("There is a problem with the bus, could not complete scan");
         timeOutDelay = tempTime;
         return;
       }
     }
     else
     {
-      Serial.print(F("Found device at address - "));
-      Serial.print(F(" 0x"));
+      Serial.print("Found device at address - ");
+      Serial.print(" 0x");
       Serial.println(s,HEX);
       totalDevicesFound++;
     }
     stop();
   }
-  if(!totalDevicesFound){Serial.println(F("No devices found"));}
+  if(!totalDevicesFound){Serial.println("No devices found");}
   timeOutDelay = tempTime;
 }
 
@@ -685,34 +682,6 @@ uint8_t I2C::receiveByte(uint8_t ack)
   return(TWI_STATUS); 
 }
 
-uint8_t I2C::receiveByte(uint8_t ack, uint8_t *target)
-{
-    uint8_t stat = I2C::receiveByte(ack);
-    if (stat == 1)
-    {
-        return(6);
-    }
-    if (ack)
-    {
-        if(stat != MR_DATA_ACK)
-        {
-            *target = 0x0;
-            return(stat);
-        }
-    }
-    else
-    {
-        if(stat != MR_DATA_NACK)
-        {
-            *target = 0x0;
-            return(stat);
-        }
-    }
-    *target = TWDR;
-    // I suppose that if we get this far we're ok
-    return 0;
-}
-
 uint8_t I2C::stop()
 {
   unsigned long startingTime = millis();
@@ -737,3 +706,4 @@ void I2C::lockUp()
 }
 
 I2C I2c = I2C();
+

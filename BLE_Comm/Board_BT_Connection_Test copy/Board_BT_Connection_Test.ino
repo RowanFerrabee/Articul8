@@ -1,6 +1,4 @@
-#include "lc709203f.h"
-
-#include "i2c_layer.h"
+//#include "lc709203f_params.h"
 
 // Select which type of test you'd like
 // only one define supercedes following ones
@@ -9,7 +7,7 @@
 #define FG_TEST 1               // tests i2c comm with the fuel gauge
 #define FG_INTERRUPT_TEST 2     // tests the interrupt with the fuel gauge
 
-#define TEST FG_INTERRUPT_TEST
+#define TEST INTERRUPT_TEST
 
 // ---------- actual code stuff ----------
 
@@ -54,7 +52,8 @@ void setupBluetooth()
   setBtAwake(true); // probably not relevant unless we put it in a sleeping mode  
 }
 
-#define BATT_ALARM_PIN 3
+#include "Wire.h"
+#define BATT_ALARM 3
 void batteryAlarmInterrupt()
 {
   // do something here :(  
@@ -62,43 +61,70 @@ void batteryAlarmInterrupt()
 
 #define READ(addr) (addr | 0x01)
 #define WRITE(addr) (addr)
-#define FUEL_GAUGE_ADDRESS 0x16
+#define FUEL_GAUGE ADDRESS 0x16
 #define ALARM_L_VOLT_REG 0x14
 
-lc709203f_t g_fuelGauge;
-
-void setupFuelGauge()
+void setupBatteryInterrupt()
 {
-  lc709203f_params_t params = {
-    .alarm_pin = BATT_ALARM_PIN,
-    .bus = 0,
-    .addr = FUEL_GAUGE_ADDRESS
-  };
+  pinMode(BATT_ALARM, INPUT);
+  delay(1);
+
+  attachInterrupt(digitalPinToInterrupt(BATT_ALARM), batteryAlarmInterrupt, LOW);
+
+  // tell the fuel gauge to alarm when battery voltage goes below (x)
+
+  // not implemented :(
   
-  lc709203f_init(&g_fuelGauge, &params);
+//  uint16_t mV = 3600;
+//  uint8_t lb = mV & 0xFF;
+//  uint8_t hb = (mV >> 8) & 0xFF;
+  
+//  uint8_t pwd = 0x87;
+//
+//  uint32_t msg = WRITE(FUEL_GAUGE_ADDRESS);
+//  
+//  msg = msg << 8;
+//  msg |= ALARM_L_VOLT_REG;
+//  msg = msg << 8;
+//  msg |= lb;
+//  msg = msg << 8l
+//  msg |= hb;
+//  
+//  // compute crc 8 atm for the msg
+//
+//  
+//  
+//  Wire.beginTransmission(WRITE(FUEL_GAUGE_ADDRESS));
+//  Wire.write(ALARM_L_VOLT_REG);
+//  Wire.write(lb);
+//  Wire.write(hb);
+//
+//  Wire.endTransmission(true);
 }
 
 void setup() {
 
-  i2c_begin();
-
-#if(TEST == LOOPBACK_TEST)    
+    Wire.begin();
     setupBluetooth();
+
+#if(TEST == INTERRUPT_TEST)
+    setupBatteryInterrupt();
 #endif
 
-#if(TEST == FG_INTERRUPT_TEST)
-  setupFuelGauge();
-#endif
-    
     // Initialize serial
     Serial.begin(MOD_BAUD);
     BtSerial.begin(BT_BAUD);
 
     Serial.flush();
     BtSerial.flush();
+
+
+#if(TEST == INTERRUPT_TEST)
+
+    setupBatteryInterrupt();
     
-    I2c.scan();
-    while(1){}
+    
+#endif
 
     delay(10);
 }
@@ -126,13 +152,6 @@ void loop() {
 
   loopbackSerial(Serial);
   loopbackSerial(BtSerial);
-
-#elif(TEST == FG_INTERRUPT_TEST)
-  Serial.println("Reading...");
-  int16_t mV = lc709203f_get_voltage(&g_fuelGauge);
-  Serial.println(mV);
-
-  delay(1000);
 
 #endif
 

@@ -86,7 +86,7 @@ typedef enum {
  * @details A function of this type will be called when an Interrupt is triggered on low RSOC or Voltage
  * @param[in]  arg Additional Arguments that will be passed to the function
  */
-typedef void (*lc709203f_cb_t)(void);
+typedef void (*lc709203f_cb_t)(void *arg);
 
 /**
  * @brief Parameter struct for driver initialization
