@@ -4,22 +4,22 @@ import processing.serial.*;
 PImage textures[];
 String texNames[] = {"front.png", "back.png", "bottom.png", "top.png", "right.png", "left.png"};
 
-//Serial imuPort;
-//String portName = "/dev/cu.usbmodem1431";
-
-Client imuClient;
+Client tcpClient;
 int socketPort = 5432;
 
 float rotx = PI/4;
 float roty = PI/4;
 float rotz = 0;
-int failed1 = 0;
-int failed2 = 0;
-int frames = 0;
+int failed = 0;
+int packets = 0;
 
 int start_time = millis();
+boolean recording = false;
+boolean exercising = false;
 
-Quaternion meas_quat = new Quaternion(0,1,0,0);
+LRAMsg lastLraMsg;
+IMUMsg lastImuMsg;
+
 Quaternion to_global = new Quaternion(0,1,0,0);
 
 void setup() {
@@ -32,65 +32,121 @@ void setup() {
   fill(255);
   stroke(color(44,48,32));
 
-  //imuPort = new Serial(this, portName, 38400);
-  imuClient = new Client(this, "127.0.0.1", socketPort);
+  tcpClient = new Client(this, "127.0.0.1", socketPort);
   
-  // Wait for MPU to set up
-  delay(2000);
+  lastLraMsg = new LRAMsg();
+  lastImuMsg = new IMUMsg();
 }
 
-float get4bytesFloat(byte[] data, int offset) {
-  String hexint=hex(data[offset+3])+hex(data[offset+2])+hex(data[offset+1])+hex(data[offset]); 
-  return Float.intBitsToFloat(unhex(hexint)); 
-}
+void readPacket() {
+  byte[] rxBuffer = new byte[PACKET_SIZE];
 
-void tryUpdateRotation() {
-  byte[] imuBuffer = new byte[17];
-  if (imuClient.available() > 0) {
-    int bytesRead = imuClient.readBytes(imuBuffer);
-    if (bytesRead == 16) {
-      float x = get4bytesFloat(imuBuffer, 0);
-      float y = get4bytesFloat(imuBuffer, 4);
-      float z = get4bytesFloat(imuBuffer, 8);
-      float w = get4bytesFloat(imuBuffer, 12);
-      if (!Float.isNaN(x) && !Float.isNaN(y) && !Float.isNaN(z) && !Float.isNaN(w) &&
-          !(x == 0 && y == 0 && z == 0)) {
-        meas_quat = new Quaternion(x, y, z, w);
-      } else {
-        failed1++;
-        print("Failed 1: ");
-        print(failed1);
-        print(" / ");
-        println(frames);
+  if (tcpClient.available() >= PACKET_SIZE)
+  {
+    int bytesRead = tcpClient.readBytes(rxBuffer);
+    
+    packets++;
+    if (isValidPacket(rxBuffer, bytesRead))
+    {
+      if (rxBuffer[POS_DATA] == IMU_DATA_MSG)
+      {
+        lastImuMsg = IMUMsg.fromBytes(rxBuffer);
       }
-    } else {
-      failed2++;
-      print("Failed 2: ");
-      print(failed2);
-      print(" / ");
-      println(frames);
+      else if (rxBuffer[POS_DATA] == LRA_CONTROL_MSG)
+      {
+        lastLraMsg = LRAMsg.fromBytes(rxBuffer);
+      }
     }
-    imuClient.clear();
+    else
+    {
+      failed++;
+      print("Packet Failure: ");
+      print(failed);
+      print(" / ");
+      println(packets);
+    }
+  }
+  
+  tcpClient.clear();
+}
+ //<>//
+void draw() {
+  readPacket();
+  
+  background(0);
+  fill(255);
+  text(packets, 40, 40);
+  
+  strokeWeight(3);
+  stroke(255);
+  line(450, 0, 450, 540);
+  
+  noStroke();
+  
+  if (recording) {
+    fill(255, 0, 0);
+    ellipse(470,20,10,10);
+  }
+  
+  if (exercising) {
+    fill(0, 255, 0);
+    ellipse(490,20,10,10);
+  }
+
+  noStroke();
+  
+  if (lastImuMsg.validQuat) {
+    translate(width/4.0, height/2.0, -100);
+    Quaternion quat = to_global.mult(lastImuMsg.quat);
+    rotate(quat.getAngle(), quat.getAxisX(), quat.getAxisY(), quat.getAxisZ());
+    scale(90);
+    TexturedCube(textures);
   }
 }
 
 void keyPressed() {
-  to_global = meas_quat.getInverse();
-  start_time = millis();
-  frames = 0;
-}
- //<>//
-void draw() {
-  tryUpdateRotation();
-  background(0);
-  frames++;
-  text(frames, 40, 40);
-  noStroke();
-  translate(width/2.0, height/2.0, -100);
-  Quaternion quat = to_global.mult(meas_quat);
-  rotate(quat.getAngle(), quat.getAxisX(), quat.getAxisY(), quat.getAxisZ());
-  scale(90);
-  TexturedCube(textures);
+  byte[] guiControlMsg = new byte[PACKET_SIZE];
+  guiControlMsg[POS_SOP] = byte(SOP);
+  guiControlMsg[POS_DATA] = byte(GUI_CONTROL_MSG);
+
+  if (key == 'r')
+  {
+    if (!recording) {
+      guiControlMsg[POS_DATA+1] = byte(START_RECORDING);
+      recording = true;
+    }
+    else {
+      guiControlMsg[POS_DATA+1] = byte(STOP_RECORDING);
+      recording = false;
+    }
+    tcpClient.write(guiControlMsg);
+  }
+
+  if (key == 'e')
+  {
+    if (!exercising) {
+      guiControlMsg[POS_DATA+1] = byte(START_EXERCISE);
+      exercising = true;
+    }
+    else {
+      guiControlMsg[POS_DATA+1] = byte(STOP_EXERCISE);
+      exercising = false;
+    }
+    tcpClient.write(guiControlMsg);
+  }
+  
+  if (key == 'p')
+  {
+    guiControlMsg[POS_DATA+1] = byte(PRINT_RECORDING);
+    tcpClient.write(guiControlMsg);
+  }
+
+  if (key == ' ')
+  {
+    to_global = lastImuMsg.quat.getInverse();
+    start_time = millis();
+    packets = 0;
+  }
 }
 
 void TexturedCube(PImage[] texs) {
