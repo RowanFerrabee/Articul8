@@ -1,5 +1,5 @@
 
-class Quaternion {
+static class Quaternion {
   Quaternion(float w_, float x_, float y_, float z_) {
     w = w_;
     x = x_;
