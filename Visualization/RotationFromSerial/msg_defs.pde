@@ -79,8 +79,21 @@ static class IMUMsg {
 }
 
 static class LRAMsg {
-  public LRAMsg() {}
+  public byte[] intensities;
+  public static int NUM_LRAS = 8;
+  
+  public LRAMsg() {
+    intensities = new byte [NUM_LRAS];
+    for (int i = 0; i < NUM_LRAS; i++) {
+      intensities[i] = 0;
+    }
+  }
 
   public static LRAMsg fromBytes(byte[] packet) {
-    return new LRAMsg();     }
+    LRAMsg lraMsg = new LRAMsg();
+    for (int i = 0; i < NUM_LRAS; i++) {
+      lraMsg.intensities[i] = packet[i+2];
+    }
+    return lraMsg;
+  }
 }
