@@ -10,3 +10,6 @@
 [submodule "articul8_web"]
 	path = articul8_web
 	url = https://github.com/dudds4/articul8_web.git
+[submodule "BLE_Comm/Articul8Python"]
+	path = BLE_Comm/Articul8Python
+	url = https://github.com/dudds4/Articul8Python.git
