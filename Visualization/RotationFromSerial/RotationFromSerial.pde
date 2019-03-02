@@ -85,22 +85,49 @@ void draw() {
   
   if (recording) {
     fill(255, 0, 0);
-    ellipse(470,20,10,10);
+    ellipse(490,20,10,10);
+    text("Recording", 520, 25);
   }
-  
-  if (exercising) {
+  else if (exercising) {
     fill(0, 255, 0);
     ellipse(490,20,10,10);
+    text("Exercising", 520, 25);
   }
+  
+  fill(0);
+  stroke(255);
+  strokeWeight(3);
+  ellipse(3.0*width/4.0, height/2.0, 150, 150);
 
   noStroke();
   
+  for (int i = 0; i < 8; i++) {
+    fill(2*lastLraMsg.intensities[i]);
+    ellipse(3.0*width/4.0 + 75*cos(i*3.1416/4), height/2.0 + 75*sin(i*3.1416/4), 20, 20);
+  }
+  
   if (lastImuMsg.validQuat) {
-    translate(width/4.0, height/2.0, -100);
     Quaternion quat = to_global.mult(lastImuMsg.quat);
+    PVector grav = getGravityVector(quat);
+    float mag = 500;
+    
+    pushMatrix();
+    translate(width/4.0, height/2.0, -100);
     rotate(quat.getAngle(), quat.getAxisX(), quat.getAxisY(), quat.getAxisZ());
     scale(90);
     TexturedCube(textures);
+    popMatrix();
+    
+    pushMatrix();
+    translate(width/4.0, height/2.0, -100);
+    stroke(255);
+    strokeWeight(3);
+    noFill();
+    beginShape(LINES);
+    vertex(0, 0, 0);
+    vertex(mag * grav.x, mag * grav.y, mag * grav.z);
+    endShape();
+    popMatrix();
   }
 }
 
@@ -152,55 +179,56 @@ void keyPressed() {
 void TexturedCube(PImage[] texs) {
   // +Z "front" face
   beginShape(QUADS);
-  texture(texs[0]);
-  vertex(-1, -1,  1, 0, 0);
-  vertex( 1, -1,  1, 1, 0);
-  vertex( 1,  1,  1, 1, 1);
-  vertex(-1,  1,  1, 0, 1);
+  //texture(texs[0]);
+  fill(255, 255, 0);
+  vertex(-1, -1,  1);
+  vertex( 1, -1,  1);
+  vertex( 1,  1,  1);
+  vertex(-1,  1,  1);
   endShape();
 
   // -Z "back" face
   beginShape(QUADS);
-  texture(texs[1]);
-  vertex( 1, -1, -1, 0, 0);
-  vertex(-1, -1, -1, 1, 0);
-  vertex(-1,  1, -1, 1, 1);
-  vertex( 1,  1, -1, 0, 1);
+  fill(255, 0, 255);
+  vertex( 1, -1, -1);
+  vertex(-1, -1, -1);
+  vertex(-1,  1, -1);
+  vertex( 1,  1, -1);
   endShape();
 
   // +Y "bottom" face
   beginShape(QUADS);
-  texture(texs[2]);
-  vertex(-1,  1,  1, 0, 0);
-  vertex( 1,  1,  1, 1, 0);
-  vertex( 1,  1, -1, 1, 1);
-  vertex(-1,  1, -1, 0, 1);
+  fill(0, 0, 255);
+  vertex(-1,  1,  1);
+  vertex( 1,  1,  1);
+  vertex( 1,  1, -1);
+  vertex(-1,  1, -1);
   endShape();
 
   // -Y "top" face
   beginShape(QUADS);
-  texture(texs[3]);
-  vertex(-1, -1, -1, 0, 0);
-  vertex( 1, -1, -1, 1, 0);
-  vertex( 1, -1,  1, 1, 1);
-  vertex(-1, -1,  1, 0, 1);
+  fill(255);
+  vertex(-1, -1, -1);
+  vertex( 1, -1, -1);
+  vertex( 1, -1,  1);
+  vertex(-1, -1,  1);
   endShape();
 
   // +X "right" face
   beginShape(QUADS);
-  texture(texs[4]);
-  vertex( 1, -1,  1, 0, 0);
-  vertex( 1, -1, -1, 1, 0);
-  vertex( 1,  1, -1, 1, 1);
-  vertex( 1,  1,  1, 0, 1);
+  fill(0, 255, 255);
+  vertex( 1, -1,  1);
+  vertex( 1, -1, -1);
+  vertex( 1,  1, -1);
+  vertex( 1,  1,  1);
   endShape();
   
   // -X "left" face
   beginShape(QUADS);
-  texture(texs[5]);
-  vertex(-1, -1, -1, 0, 0);
-  vertex(-1, -1,  1, 1, 0);
-  vertex(-1,  1,  1, 1, 1);
-  vertex(-1,  1, -1, 0, 1);
+  fill(255, 0, 0);
+  vertex(-1, -1, -1);
+  vertex(-1, -1,  1);
+  vertex(-1,  1,  1);
+  vertex(-1,  1, -1);
   endShape();
 }

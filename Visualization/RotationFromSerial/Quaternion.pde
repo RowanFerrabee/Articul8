@@ -73,3 +73,11 @@ static class Quaternion {
   float default_y = 0.0;
   float default_z = 0.0;
 };
+
+PVector getGravityVector(Quaternion q) {
+  float x = 2 * (q.x*q.z - q.w*q.y);
+  float y = 2 * (q.w*q.x + q.y*q.z);
+  float z = q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z;
+
+  return new PVector(x, y, z);
+}
