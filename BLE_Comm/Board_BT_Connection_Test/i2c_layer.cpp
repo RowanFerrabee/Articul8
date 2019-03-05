@@ -13,9 +13,14 @@ void i2c_begin()
 //  Wire1.begin(); 
 }
 
+void i2c_scan()
+{
+//  Serial.println("I2C scan not implemented with wire...");
+}
+
 int8_t i2c_read_regs(uint8_t bus, uint8_t slaveAddress, uint8_t cmdCode, uint8_t *dst, uint8_t len, uint8_t iuno)
 {
-//    slaveAddress = slaveAddress >> 1;
+    slaveAddress = slaveAddress;
     
     // 
     Wire.beginTransmission(slaveAddress);
@@ -45,7 +50,7 @@ void i2c_begin()
 int8_t i2c_read_regs(uint8_t slaveAddress, uint8_t cmdCode, int16_t *value, uint8_t *crc)
 { 
   
-    Serial.println("In read regs");
+//    Serial.println("In read regs");
     if(!value || !crc)
       return -1;
     
@@ -85,7 +90,7 @@ int8_t i2c_read_regs(uint8_t bus, uint8_t slaveAddress, uint8_t cmdCode, uint8_t
     (void)bus;
     (void)iuno;
 
-    Serial.println("In read regs");
+//    Serial.println("In read regs");
     
     if(!dst || len == 0)
       return -1;
@@ -95,14 +100,17 @@ int8_t i2c_read_regs(uint8_t bus, uint8_t slaveAddress, uint8_t cmdCode, uint8_t
     // assuming little endian, which I think is true in our case
 
     I2c.timeOut(100);
+
+    uint8_t readAddress = (slaveAddress << 1) | 0x01;
+    uint8_t writeAddress = slaveAddress << 1;
     
     Serial.println("Starting transmission");
     status = I2c.start();
-    status = I2c.sendAddress(slaveAddress | 0x01);
+    status = I2c.sendAddress(writeAddress);
     status = I2c.sendByte(cmdCode);
 
     status = I2c.start();
-    status = I2c.sendAddress(slaveAddress);
+    status = I2c.sendAddress(readAddress);
 
     int i;
     for(i = 0; i < len-1; ++i)
@@ -147,6 +155,11 @@ int8_t i2c_write_regs(uint8_t bus, uint8_t slaveAddress, uint8_t cmdCode, uint8_
     (void) status;
 
     return 0;
+}
+
+void i2c_scan()
+{
+  I2c.scan();
 }
 
 #endif

@@ -90,10 +90,13 @@ int gpio_init_int(gpio_t pin, unsigned flank, interrupt_cb_t cb)
 int lc709203f_init(lc709203f_t *dev, const lc709203f_params_t *params)
 {
     assert(dev && params);
+    
     dev->params = *params;
     dev->bus = params->bus;
     dev->addr = params->addr;
+    
     gpio_init_int(dev->params.alarm_pin, FALLING, dev->cb);
+    
     return LC709203F_OK;
 }
 
@@ -103,8 +106,8 @@ int16_t lc709203f_get_voltage(const lc709203f_t *dev)
     uint8_t rec_buf[3];
     
 //    i2c_acquire(dev->bus);
-    Serial.print("Address: ");
-    Serial.println(dev->addr);
+//    Serial.print("Address: ");
+//    Serial.println(dev->addr);
     
     int8_t control = i2c_read_regs(dev->bus, dev->addr, LC709203F_REG_CELL_VOLTAGE, rec_buf, 3, 0);
 //    i2c_release(dev->bus);
