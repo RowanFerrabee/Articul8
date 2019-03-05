@@ -87,7 +87,7 @@ public:
     for(unsigned i = 0; i < PACKET_SIZE - NUM_OVERHEAD_BYTES; ++i)
     {
         // modulo offset
-        while(o >= N) o -= N;        
+        while(o >= N) o -= N;
         checksum += buf[o++];
     }
 

@@ -17,7 +17,7 @@ void populateBTPacket(uchar* packetBytes)
   packetBytes[POS_SOP] = SOP;
 
   uchar checksum = 0;
-  for (int i = 0; i < POS_CHECKSUM; i++) {
+  for (int i = 1; i < POS_CHECKSUM; i++) {
     checksum += packetBytes[i];
   }
   
@@ -40,7 +40,9 @@ bool checkForBTPacket(uchar* dst)
       Serial.write("Linear buffer full");     // This is a problem
       nb = SERIAL_BUFFER_SIZE;
     }
-    
+
+    serialRxBuffer[nb] = 0;
+
     BtSerial.readBytes(serialRxBuffer, nb);             // Read incoming message    
     bluetoothBuffer.write((unsigned char*)serialRxBuffer, nb);
 
@@ -50,10 +52,22 @@ bool checkForBTPacket(uchar* dst)
       // Populate buffer with first complete BT packet
       if (bluetoothBuffer.readPacket(dst))
       {
-        Serial.println("Received BT packet");
+//        Serial.println("Received BT packet");
         return true;
       }
     }
+//    else if(foundPacketResult == BUFFER_INSUF_BYTES_WITH_HEADER)
+//    {
+//      Serial.println("insuf bytes w/ header");
+//    }
+//    else if(foundPacketResult == BUFFER_NO_HEADER)
+//    {
+//      Serial.println("no header");
+//    }
+//    else if(foundPacketResult == BUFFER_FAILED_CHECKSUM)
+//    {
+//      Serial.println("Failed checksum");
+//    }
 
   }
   

@@ -5,9 +5,41 @@
 #include "lra_man.h"
 #include "fsm_man.h"
 
-#define BT_RST 4
-#define BT_BAUD 19200
-#define LOGGER_BAUD 19200
+#define LOGGER_BAUD 9600
+
+// --- BLUETOOTH STUFF NEEDS TO MOVE TO ANOTHER FILE
+
+#define BT_RST_N 4
+#define BT_SW_BTN 5
+#define BT_WAKEUP 6
+#define BT_BAUD 38400
+
+#define BtSerial Serial1
+
+void resetBT()
+{
+    pinMode(BT_RST_N, OUTPUT);
+    delay(10);
+    digitalWrite(BT_RST_N, LOW);
+    delay(1);
+    digitalWrite(BT_RST_N, HIGH);
+    delay(1);
+    pinMode(BT_RST_N, INPUT); // leave the reset pin in a high impedance state
+}
+
+void setBtOn(bool on) { digitalWrite(BT_SW_BTN, on ? HIGH : LOW); }
+void setBtAwake(bool awake) { digitalWrite(BT_WAKEUP, awake ? LOW : HIGH); }
+
+void setupBluetooth()
+{
+  pinMode(BT_RST_N, INPUT);  // leave the reset pin in a high impedance state
+  pinMode(BT_SW_BTN, OUTPUT);
+  pinMode(BT_WAKEUP, INPUT); // leave high impedance
+
+  setBtOn(true);
+  delay(1);
+  resetBT();
+}
 
 Packet btCommand;
 FSM_Man fsm_man = FSM_Man();
@@ -30,10 +62,12 @@ void initAckPacket()
 void setup() {
 
   // Initialize bluetooth pins through serial port
-  pinMode(BT_RST, OUTPUT);
-  digitalWrite(BT_RST, HIGH);
+
+  setupBluetooth();
+
   BtSerial.begin(BT_BAUD);
   BtSerial.flush();
+
   Serial.begin(LOGGER_BAUD);
   Serial.flush();
 
@@ -53,17 +87,17 @@ void setup() {
 
   dmpReady = true;
   
-  Wire.begin(); // Initialize I2C
-  initEnableMux(); // Enable all LRA drivers
-  initLRAdrivers(); // Setup LRA drivers
-
-  // Turn all motors off
-  for (int i = 0; i < NUM_LRAS; i++) {
-    lraIntensities[i] = 0;
-    i2cMuxON(i); // Enable I2C for LRA driver 0 
-    i2cWriteByte(DRV2604L_ADDR, 0x02, 0); // Zero power to LRA
-    i2cMuxOFF(); // Again, when to do this?
-  }
+//  Wire.begin(); // Initialize I2C
+//  initEnableMux(); // Enable all LRA drivers
+//  initLRAdrivers(); // Setup LRA drivers
+//
+//  // Turn all motors off
+//  for (int i = 0; i < NUM_LRAS; i++) {
+//    lraIntensities[i] = 0;
+//    i2cMuxON(i); // Enable I2C for LRA driver 0 
+//    i2cWriteByte(DRV2604L_ADDR, 0x02, 0); // Zero power to LRA
+//    i2cMuxOFF(); // Again, when to do this?
+//  }
 }
 
 int toggle = 0;
@@ -73,7 +107,7 @@ bool command_available = false;
 void loop() {
 
   loopCounter++;
-  loopCounter %= 6;
+  loopCounter %= 4;
   int l;
   
   switch(loopCounter)
@@ -84,6 +118,7 @@ void loop() {
       
     case 1:
       checkForIMUPacket(imuPacket.as_struct.data, &l);
+      fsm_man.run_fsm();
       break;
       
     case 2:
@@ -112,14 +147,7 @@ void loop() {
       
     case 3:
       checkForIMUPacket(imuPacket.as_struct.data, &l);
-      break;
-      
-    case 4:
       fsm_man.run_fsm();
-      break;
-      
-    case 5:
-      checkForIMUPacket(imuPacket.as_struct.data, &l);
       break;     
   }
 }
