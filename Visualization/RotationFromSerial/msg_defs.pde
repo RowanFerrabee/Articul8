@@ -1,6 +1,6 @@
 // packet related defs
 
-static char PACKET_SIZE = 40;
+static char PACKET_SIZE = 19;
 static char PACKET_OVERHEAD = 2;
 static char SOP = 253; //TODO
 static char POS_SOP = 0;
