@@ -1,4 +1,4 @@
-#include "MPU6050_6Axis_MotionApps20.h"
+#include "../MPU/MPU6050_6Axis_MotionApps20.h"
 
 // NOTE! Enabling DEBUG adds about 3.3kB to the flash program size.
 // Debug output is now working even on ATMega328P MCUs (e.g. Arduino Uno)

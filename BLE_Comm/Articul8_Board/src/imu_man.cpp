@@ -1,6 +1,5 @@
-#include "imu_man.h"
-
-#include "I2Cdev.h"
+#include "../inc/imu_man.h"
+#include "../inc/I2Cdev.h"
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
@@ -49,6 +48,13 @@ void dmpDataReady()
 
 bool initDMP(int xGyro, int yGyro, int zGyro, int xAccel, int yAccel, int zAccel)
 {
+  (void)xGyro;
+  (void)yGyro;
+  (void)zGyro;
+  (void)xAccel;
+  (void)yAccel;
+  (void)zAccel;
+
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity

@@ -1,6 +1,6 @@
-#include "lra_rotation.h"
-#include <cstdlib>
-#include <cstring>
+#include "../inc/lra_rotation.h"
+#include <stdlib.h>
+#include <string.h>
 
 #define MIN(x, y) ( (x) < (y) ? (x) : (y) )
 #define MAX(x, y) ( (x) < (y) ? (y) : (x) )

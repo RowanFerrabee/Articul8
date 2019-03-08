@@ -37,7 +37,7 @@ THE SOFTWARE.
 #ifndef _MPU6050_H_
 #define _MPU6050_H_
 
-#include "I2Cdev.h"
+#include "../inc/I2Cdev.h"
 #include "helper_3dmath.h"
 #define MPU6050_INCLUDE_DMP_MOTIONAPPS20
 

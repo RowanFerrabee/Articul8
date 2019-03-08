@@ -6,8 +6,8 @@
 
 #include "msg_defs.h"
 #include "lra_man.h"
-#include "helper_3dmath.h"
-#include "MPU6050_6Axis_MotionApps20.h"
+#include "../MPU/helper_3dmath.h"
+#include "../MPU/MPU6050_6Axis_MotionApps20.h"
 
 extern Packet imuPacket;
 

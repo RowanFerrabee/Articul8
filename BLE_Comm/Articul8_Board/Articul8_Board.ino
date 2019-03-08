@@ -1,9 +1,9 @@
 
-#include "msg_defs.h"
-#include "bt_man.h"
-#include "imu_man.h"
-#include "lra_man.h"
-#include "fsm_man.h"
+#include "inc/msg_defs.h"
+#include "inc/bt_man.h"
+#include "inc/imu_man.h"
+#include "inc/lra_man.h"
+#include "inc/fsm_man.h"
 
 #define LOGGER_BAUD 9600
 
@@ -150,4 +150,6 @@ void loop() {
       fsm_man.run_fsm();
       break;     
   }
+  
+  BtSerial.flush();
 }

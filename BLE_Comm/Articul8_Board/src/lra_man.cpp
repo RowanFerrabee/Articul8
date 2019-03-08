@@ -1,4 +1,4 @@
-#include "lra_man.h"
+#include "../inc/lra_man.h"
 
 uint8_t lraIntensities[NUM_LRAS];
 
