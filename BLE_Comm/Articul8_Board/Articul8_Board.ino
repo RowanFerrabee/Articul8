@@ -59,6 +59,17 @@ void initAckPacket()
   ackPacket.as_struct.checksum = SOP + ACK;
 }
 
+void initI2C()
+{
+    // Join I2C bus
+    #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+        Wire.begin();
+//        Wire.setClock(400000); // 400kHz I2C clock
+    #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+        Fastwire::setup(400, true);
+    #endif
+}
+
 void setup() {
 
   // Initialize bluetooth pins through serial port
@@ -73,6 +84,7 @@ void setup() {
 
   initAckPacket();
   initI2C();
+  initLRAdrivers();
 
   pinMode(INTERRUPT_PIN, INPUT);
 
@@ -86,18 +98,6 @@ void setup() {
   if(!did_init) { Serial.println("DMP Init failed"); while(1); }
 
   dmpReady = true;
-  
-//  Wire.begin(); // Initialize I2C
-//  initEnableMux(); // Enable all LRA drivers
-//  initLRAdrivers(); // Setup LRA drivers
-//
-//  // Turn all motors off
-//  for (int i = 0; i < NUM_LRAS; i++) {
-//    lraIntensities[i] = 0;
-//    i2cMuxON(i); // Enable I2C for LRA driver 0 
-//    i2cWriteByte(DRV2604L_ADDR, 0x02, 0); // Zero power to LRA
-//    i2cMuxOFF(); // Again, when to do this?
-//  }
 }
 
 int toggle = 0;

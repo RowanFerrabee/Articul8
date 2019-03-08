@@ -73,17 +73,6 @@ bool initDMP(int xGyro, int yGyro, int zGyro, int xAccel, int yAccel, int zAccel
   return (devStatus == 0);
 }
 
-void initI2C()
-{
-    // Join I2C bus
-    #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-        Wire.begin();
-        Wire.setClock(400000); // 400kHz I2C clock
-    #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-        Fastwire::setup(400, true);
-    #endif
-}
-
 bool checkForIMUPacket(void* dstPtr, int* len)
 {
   uchar* dst = (uchar*) dstPtr;
