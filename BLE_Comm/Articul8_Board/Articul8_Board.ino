@@ -13,10 +13,8 @@ Packet ackPacket;
 Packet btCommand;
 lc709203f_t g_fuelGauge;
 FSM_Man fsm_man = FSM_Man();
+
 int battery_low_flag = 0;
-
-void setup();
-
 int toggle = 0;
 unsigned loopCounter = 0;
 bool command_available = false;

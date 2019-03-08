@@ -43,7 +43,6 @@ extern float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container 
 
 // -- Function Declarations --
 bool initDMP(int xGyro, int yGyro, int zGyro, int xAccel, int yAccel, int zAccel);
-void initI2C();
 bool checkForIMUPacket(void* dst, int* len);
 
 // Interrupt Detection Routine
