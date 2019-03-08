@@ -6,25 +6,16 @@
 #include "inc/imu_man.h"
 #include "inc/lra_man.h"
 #include "inc/fsm_man.h"
-
+#include "inc/lc709203f.h"
 #include "articul8Setup.h"
 
 Packet ackPacket;
 Packet btCommand;
+lc709203f_t g_fuelGauge;
 FSM_Man fsm_man = FSM_Man();
+int battery_low_flag = 0;
 
-void setup() {
-
-  // Initialize bluetooth pins through serial port
-
-  setupBluetooth();
-  setupSerial();
-  initAckPacket();
-  initI2C();
-  pinMode(INTERRUPT_PIN, INPUT);
-  initMPU();
-  
-}
+void setup();
 
 int toggle = 0;
 unsigned loopCounter = 0;
@@ -76,6 +67,18 @@ void loop() {
       fsm_man.run_fsm();
       break;     
   }
+
+}
+
+void setup() {
+
+  // Initialize bluetooth pins through serial port
+  setupBluetooth();
+  setupSerial();
+  initI2C();
+  initAckPacket();
+  initMPU();
+  initFuelGauge();
+  initLRAdrivers();
   
-  BtSerial.flush();
 }

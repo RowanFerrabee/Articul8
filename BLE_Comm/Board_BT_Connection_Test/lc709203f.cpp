@@ -78,12 +78,12 @@ typedef void (*interrupt_cb_t)(void);
 
 int gpio_init_int(gpio_t pin, unsigned flank, interrupt_cb_t cb)
 {
-  if(flank != CHANGE && flank != LOW && flank != RISING && flank != FALLING)
-    return -1;
+  // if(flank != CHANGE && flank != LOW && flank != RISING && flank != FALLING)
+  //   return -1;
   
   pinMode(pin, INPUT);
   delay(1);
-  attachInterrupt(digitalPinToInterrupt(pin), cb, LOW);
+  attachInterrupt(digitalPinToInterrupt(pin), cb, FALLING);
   delay(1);
 }
 

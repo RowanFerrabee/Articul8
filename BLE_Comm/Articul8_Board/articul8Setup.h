@@ -8,15 +8,25 @@
 
 #define LOGGER_BAUD 9600
 
+// bluetooth pins
 #define BT_RST_N 4
 #define BT_SW_BTN 5
 #define BT_WAKEUP 6
 #define BT_BAUD 38400
 
+// fuel gauge pins
+#define BATT_ALARM_PIN 3
+#define FUEL_GAUGE_ADDRESS 0x16
+#define ALARM_L_VOLT_REG 0x14
+
 extern Packet ackPacket;
 extern Packet btCommand;
+extern lc709203f_t g_fuelGauge;
+extern int battery_low_flag;
 
 void initMPU();
+void initFuelGauge();
+void batteryAlarmCallback();
 
 void setupSerial()
 {
@@ -78,5 +88,27 @@ void initMPU()
 
   dmpReady = true;  
 }
+
+void initFuelGauge()
+{
+  lc709203f_params_t params = {
+    .alarm_pin = BATT_ALARM_PIN,
+    .bus = 0,
+    .addr = FUEL_GAUGE_ADDRESS >> 1
+  };
+
+  g_fuelGauge.cb = batteryAlarmCallback;
+  lc709203f_init(&g_fuelGauge, &params);
+  delayMicroseconds(200);
+  lc709203f_set_alarm_low_cell_voltage(&g_fuelGauge, 3600);
+  
+}
+
+
+void batteryAlarmCallback()
+{
+  battery_low_flag = 1;
+}
+
 
 #endif
