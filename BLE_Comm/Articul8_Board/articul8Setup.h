@@ -5,7 +5,7 @@
 
 #include "inc/msg_defs.h"
 #include "inc/bt_man.h"
-#include "Wire.h"
+#include <Wire.h>
 #define LOGGER_BAUD 9600
 
 // bluetooth pins

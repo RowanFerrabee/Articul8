@@ -18,6 +18,7 @@
  * @}
  */
 
+
 #include "../inc/lc709203f.h"
 #include "assert.h"
 #define ENABLE_DEBUG        (0)

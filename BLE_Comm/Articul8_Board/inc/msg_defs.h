@@ -14,6 +14,9 @@ typedef unsigned char uchar;
 
 #define SOP 253
 
+#define CALIBRATE_ACCEL 5
+#define CALIBRATE_GYRO 6
+
 // Packets with type NONE are considered invalid Packets
 enum PacketType {
   NONE = 0,
@@ -22,6 +25,10 @@ enum PacketType {
   STATE_CHANGE = 3,
   IMU_DATA = 4,
   LRA_CONTROL = 5,
+  GUI_CONTROL = 6,
+  CALIBRATE = 7,
+  OFFSET_REPORT = 8,
+  BATTERY_REPORT = 9,
   NUM_TYPES
 };
 
