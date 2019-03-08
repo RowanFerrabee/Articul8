@@ -1,103 +1,29 @@
 
+#define BtSerial Serial1
+
 #include "inc/msg_defs.h"
 #include "inc/bt_man.h"
 #include "inc/imu_man.h"
 #include "inc/lra_man.h"
 #include "inc/fsm_man.h"
 
-#define LOGGER_BAUD 9600
-
-// --- BLUETOOTH STUFF NEEDS TO MOVE TO ANOTHER FILE
-
-#define BT_RST_N 4
-#define BT_SW_BTN 5
-#define BT_WAKEUP 6
-#define BT_BAUD 38400
-
-#define BtSerial Serial1
-
-void resetBT()
-{
-    pinMode(BT_RST_N, OUTPUT);
-    delay(10);
-    digitalWrite(BT_RST_N, LOW);
-    delay(1);
-    digitalWrite(BT_RST_N, HIGH);
-    delay(1);
-    pinMode(BT_RST_N, INPUT); // leave the reset pin in a high impedance state
-}
-
-void setBtOn(bool on) { digitalWrite(BT_SW_BTN, on ? HIGH : LOW); }
-void setBtAwake(bool awake) { digitalWrite(BT_WAKEUP, awake ? LOW : HIGH); }
-
-void setupBluetooth()
-{
-  pinMode(BT_RST_N, INPUT);  // leave the reset pin in a high impedance state
-  pinMode(BT_SW_BTN, OUTPUT);
-  pinMode(BT_WAKEUP, INPUT); // leave high impedance
-
-  setBtOn(true);
-  delay(1);
-  resetBT();
-}
-
-Packet btCommand;
-FSM_Man fsm_man = FSM_Man();
+#include "articul8Setup.h"
 
 Packet ackPacket;
-
-void initAckPacket()
-{
-  ackPacket.as_struct.sop = SOP;
-  ackPacket.as_struct.type = ACK;
-  
-  for (int i = 0; i < PACKET_DATA_SIZE; i++)
-  {
-    ackPacket.as_struct.data[i] = '\0';
-  }
-  
-  ackPacket.as_struct.checksum = SOP + ACK;
-}
+Packet btCommand;
+FSM_Man fsm_man = FSM_Man();
 
 void setup() {
 
   // Initialize bluetooth pins through serial port
 
   setupBluetooth();
-
-  BtSerial.begin(BT_BAUD);
-  BtSerial.flush();
-
-  Serial.begin(LOGGER_BAUD);
-  Serial.flush();
-
+  setupSerial();
   initAckPacket();
   initI2C();
-
   pinMode(INTERRUPT_PIN, INPUT);
-
-  bool did_connect = false;
-  mpu.initialize();
-  did_connect = mpu.testConnection();
-  if(!did_connect) { Serial.println("IMU testConnection failed"); while(1); }
-
-  bool did_init = false;
-  did_init = initDMP(0,0,0,0,0,0);
-  if(!did_init) { Serial.println("DMP Init failed"); while(1); }
-
-  dmpReady = true;
+  initMPU();
   
-//  Wire.begin(); // Initialize I2C
-//  initEnableMux(); // Enable all LRA drivers
-//  initLRAdrivers(); // Setup LRA drivers
-//
-//  // Turn all motors off
-//  for (int i = 0; i < NUM_LRAS; i++) {
-//    lraIntensities[i] = 0;
-//    i2cMuxON(i); // Enable I2C for LRA driver 0 
-//    i2cWriteByte(DRV2604L_ADDR, 0x02, 0); // Zero power to LRA
-//    i2cMuxOFF(); // Again, when to do this?
-//  }
 }
 
 int toggle = 0;
