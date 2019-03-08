@@ -1,6 +1,6 @@
 #include "lc709203f.h"
-
 #include "i2c_layer.h"
+#include "setup.h"
 
 // Select which type of test you'd like
 // only one define supercedes following ones
@@ -9,8 +9,7 @@
 #define FG_TEST 1               // tests i2c comm with the fuel gauge
 #define FG_INTERRUPT_TEST 2     // tests the interrupt with the fuel gauge
 #define I2C_SCAN 3
-
-#define TEST LOOPBACK_TEST
+#define TEST FG_TEST
 
 // ---------- actual code stuff ----------
 
@@ -96,8 +95,8 @@ void setup() {
   i2c_begin();
 
 #if(TEST == I2C_SCAN)
-//    i2c_scan();
-//    while(1){}
+    i2c_scan();
+    while(1){}
 #endif
 
 #if(TEST == LOOPBACK_TEST)    
@@ -105,7 +104,7 @@ void setup() {
 #endif
 
 #if(TEST == FG_INTERRUPT_TEST || TEST == FG_TEST)
-//  setupFuelGauge();
+  setupFuelGauge();
 #endif
     
     // Initialize serial
@@ -128,14 +127,17 @@ void loopbackSerial(HardwareSerial &ser)
     
     nb = MIN(nb, SERIAL_BUFFER_SIZE);
     ser.readBytes(serialBuffer, nb);
-    
-    Serial.write((unsigned char*)serialBuffer, nb);
-    BtSerial.write((unsigned char*)serialBuffer, nb);
+
+    if(&ser == &Serial1)
+      Serial.write((unsigned char*)serialBuffer, nb);
+    else
+      BtSerial.write((unsigned char*)serialBuffer, nb);
   }
   
 }
 
-void loop() {
+void loop() 
+{
 
 #if(TEST == LOOPBACK_TEST)
 

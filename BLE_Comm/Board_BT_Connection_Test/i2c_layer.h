@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-//#define USE_WIRE
+#define USE_WIRE
 
 #ifdef USE_WIRE
   #include "Wire.h"

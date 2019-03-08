@@ -25,7 +25,7 @@ int8_t i2c_read_regs(uint8_t bus, uint8_t slaveAddress, uint8_t cmdCode, uint8_t
     // 
     Wire.beginTransmission(slaveAddress);
     Wire.write(cmdCode);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 
     // 
     Wire.requestFrom(slaveAddress, len);
