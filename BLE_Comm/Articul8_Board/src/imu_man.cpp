@@ -1,5 +1,4 @@
 #include "../inc/imu_man.h"
-#include "../inc/I2Cdev.h"
 
 #include "Wire.h"
 

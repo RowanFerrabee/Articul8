@@ -1,8 +1,8 @@
 #include "../inc/lra_man.h"
 #include "Arduino.h"
+#include <Wire.h>
 
 #define DRV2604L_ADDR (0x5A)
-#define LRA_MAX_INTENSITY 127
 
 uint8_t lraIntensities[NUM_LRAS];
 
