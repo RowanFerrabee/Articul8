@@ -4,6 +4,7 @@
 #include "msg_defs.h"
 #include "imu_man.h"
 #include <Arduino.h>
+#include "lra_rotation.h"
 
 #define DEFAULT_PERIOD 1000
 #define DEFAULT_IMU_TIMEOUT 2000
@@ -39,12 +40,13 @@ public:
     }
     
     standbyPacket.as_struct.checksum = SOP + ACK;
+    lra_setup();
+    lra_setIntensity(LRA_MAX_INTENSITY);
   }
 
   void changeState(uchar state, int period) {
     this->state = static_cast<BoardState>(state);
     this->period = period;
-    this->lastCycleStart = millis();
 
     // state specific transition actions could be handled more cleanly
     if(this->state == IMU_STREAMING_STATE) { timeout = DEFAULT_IMU_TIMEOUT; }
@@ -57,13 +59,21 @@ public:
     changeState(state, period);
   }
 
-  void run_fsm() {
+  void lra_fsm(int ms)
+  {
+    lra_count(ms);
+    int intensities[LRA_NUM_OUTPUTS];
+    bool changed[LRA_NUM_OUTPUTS];
+    lra_getOutputs(intensities, changed);
+    for(int i = 0; i < LRA_NUM_OUTPUTS; ++i)
+    {
+      if(changed[i])
+        setLRAIntensity(i, intensities[i]);
+    }
+  }
 
-    // only run the FSM if the period has been reached
-    int currentMs = millis();
-    if(currentMs - lastCycleStart > period) { lastCycleStart += period; }
-    else { return; }
-    
+  void imu_fsm()
+  {
     switch (state) {
       case DEFAULT_STATE:
 //        sendBTPacket(standbyPacket.as_array);
@@ -83,7 +93,18 @@ public:
         Serial.print("FSM in invalid state: ");
         Serial.println(state);
         break;
-    }
+    }    
+  }
+
+  void run_fsm() {
+
+    // only run the FSM if the period has been reached
+    int currentMs = millis();
+    if(currentMs - lastCycleStart > period) { lastCycleStart += period; }
+    else { return; }
+
+    imu_fsm();    
+    lra_fsm(period);
   }
 };
 

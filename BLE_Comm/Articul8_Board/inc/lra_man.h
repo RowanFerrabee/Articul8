@@ -19,5 +19,6 @@ public:
 };
 
 void executeLRACommand(const LRACmd& lra_cmd);
+void setLRAIntensity(unsigned id, unsigned intensity);
 
 #endif

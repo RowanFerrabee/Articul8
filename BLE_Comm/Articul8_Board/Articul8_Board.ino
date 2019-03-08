@@ -49,12 +49,14 @@ void loop() {
             fsm_man.changeStateFromMsg(btCommand.as_struct.data);
             sendBTPacket(ackPacket.as_array);
             break;
+
+          
     
-          case LRA_CONTROL:
-            LRACmd lra_cmd((uchar *)btCommand.as_struct.data);
-            executeLRACommand(lra_cmd);
-            sendBTPacket(ackPacket.as_array);
-            break;
+//          case LRA_CONTROL:
+//            LRACmd lra_cmd((uchar *)btCommand.as_struct.data);
+//            executeLRACommand(lra_cmd);
+//            sendBTPacket(ackPacket.as_array);
+//            break;
         }
       }
       command_available = false;

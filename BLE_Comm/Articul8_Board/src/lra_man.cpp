@@ -2,6 +2,7 @@
 #include "Arduino.h"
 
 #define DRV2604L_ADDR (0x5A)
+#define LRA_MAX_INTENSITY 127
 
 uint8_t lraIntensities[NUM_LRAS];
 
@@ -34,12 +35,19 @@ LRACmd::LRACmd (PacketData data)
 
 void executeLRACommand(const LRACmd& lra_cmd)
 {
-  for (uint8_t i = 0; i < NUM_LRAS; i++)
+  for (uint8_t id = 0; id < NUM_LRAS; id++)
   {
-    if (lra_cmd.intensities[id] != lraIntensities[id] && lra_cmd.intensities[id] <= 127)
+    if (lra_cmd.intensities[id] != lraIntensities[id] && lra_cmd.intensities[id] <= LRA_MAX_INTENSITY)
     {
       lraIntensities[id] = lra_cmd.intensities[id];
       lraWriteByte(id, 0x02, lra_cmd.intensities[id]);
     }
   }
+}
+
+void setLRAIntensity(unsigned id, unsigned intensity)
+{
+  if(id < NUM_LRAS && intensity <= LRA_MAX_INTENSITY)
+      lraWriteByte(id, 0x02, intensity);    
+  
 }
