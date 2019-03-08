@@ -9,14 +9,6 @@
 #include "inc/lc709203f.h"
 #include "articul8Setup.h"
 
-/*
-  TODOs:
-     - implement a wakeup for fuel gauge
-     - implement IMU calibration
-     - queries to peripherals over python (low priority)
-     - 
-*/
-
 Packet ackPacket;
 Packet btCommand;
 lc709203f_t g_fuelGauge;
@@ -58,11 +50,11 @@ void loop() {
             sendBTPacket(ackPacket.as_array);
             break;
     
-         case LRA_CONTROL:
-           LRACmd lra_cmd((uchar *)btCommand.as_struct.data);
-           executeLRACommand(lra_cmd);
-           sendBTPacket(ackPacket.as_array);
-           break;
+          case LRA_CONTROL:
+            LRACmd lra_cmd((uchar *)btCommand.as_struct.data);
+            executeLRACommand(lra_cmd);
+            sendBTPacket(ackPacket.as_array);
+            break;
         }
       }
       command_available = false;

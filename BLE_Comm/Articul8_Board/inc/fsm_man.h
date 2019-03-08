@@ -41,7 +41,7 @@ public:
     
     standbyPacket.as_struct.checksum = SOP + ACK;
     lra_rotate_setup();
-    lra_rotate_setIntensity(LRA_MAX_INTENSITY);
+    // lra_rotate_setIntensity(LRA_MAX_INTENSITY);
   }
 
   void changeState(uchar state, int period) {
@@ -61,6 +61,7 @@ public:
 
   void lra_fsm(int ms)
   {
+    return;
     lra_rotate_count(ms);
     int intensities[NUM_LRAS];
     bool changed[NUM_LRAS];
