@@ -1,11 +1,7 @@
 #include "../inc/imu_man.h"
 #include "../inc/I2Cdev.h"
 
-// Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
-// is used in I2Cdev.h
-#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-    #include "Wire.h"
-#endif
+#include "Wire.h"
 
 Packet imuPacket;
 int lra_write_val = 0;

@@ -11,7 +11,7 @@ void lraWriteByte(uint8_t id, uint8_t reg, uint8_t val) {
   Wire.write(reg); // Register
   Wire.write(val); // Value
   Wire.endTransmission();
-  delay(10);
+  delay(1);
 }
 
 void initLRAdrivers() {
@@ -36,28 +36,10 @@ void executeLRACommand(const LRACmd& lra_cmd)
 {
   for (uint8_t i = 0; i < NUM_LRAS; i++)
   {
-//    if (lra_cmd.intensities[id] != lraIntensities[id]
-//     && lra_cmd.intensities[id] <= 127)
-//    {
-//      lraIntensities[id] = lra_cmd.intensities[id];
-//      lraWriteByte(id, 0x02, lra_cmd.intensities[id]);
-//    }
-    if (lra_cmd.intensities[i] != 0) {
-      if (lraIntensities[i] != 127) {
-        Serial.print("Writing ");
-        Serial.print(i);
-        Serial.println(" to 127");
-        lraIntensities[i] = 127;
-        lraWriteByte(i, 0x02, lraIntensities[i]);
-      }
-    } else {
-      if (lraIntensities[i] != 0) {
-        Serial.print("Writing ");
-        Serial.print(i);
-        Serial.println(" to 0");
-        lraIntensities[i] = 0;
-        lraWriteByte(i, 0x02, lraIntensities[i]);
-      }
+    if (lra_cmd.intensities[id] != lraIntensities[id] && lra_cmd.intensities[id] <= 127)
+    {
+      lraIntensities[id] = lra_cmd.intensities[id];
+      lraWriteByte(id, 0x02, lra_cmd.intensities[id]);
     }
   }
 }

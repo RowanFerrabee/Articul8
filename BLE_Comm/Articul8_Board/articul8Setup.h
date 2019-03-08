@@ -5,7 +5,7 @@
 
 #include "inc/msg_defs.h"
 #include "inc/bt_man.h"
-
+#include "Wire.h"
 #define LOGGER_BAUD 9600
 
 // bluetooth pins
@@ -35,6 +35,11 @@ void setupSerial()
 
   Serial.begin(LOGGER_BAUD);
   Serial.flush();
+}
+
+void initI2C()
+{
+  Wire.begin();
 }
 
 void resetBT()
