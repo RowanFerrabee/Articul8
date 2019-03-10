@@ -3,6 +3,7 @@
 
 #include "inc/msg_defs.h"
 #include "inc/bt_man.h"
+#include "inc/calibration.h"
 #include "inc/imu_man.h"
 #include "inc/lra_man.h"
 #include "inc/fsm_man.h"
@@ -43,6 +44,15 @@ void loop() {
         {
           case STANDBY:
             sendBTPacket(ackPacket.as_array);
+            break;
+
+          case CALIBRATE:
+            calibrateDevice(btCommand.as_struct.data[0]);
+            sendBTPacket(reportOffsets());
+            break;
+
+          case OFFSET_REPORT:
+            sendBTPacket(reportOffsets());
             break;
           
           case STATE_CHANGE:

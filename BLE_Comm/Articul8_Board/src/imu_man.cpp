@@ -1,6 +1,6 @@
 #include "../inc/imu_man.h"
 
-#include "Wire.h"
+#include <Wire.h>
 
 Packet imuPacket;
 int lra_write_val = 0;
