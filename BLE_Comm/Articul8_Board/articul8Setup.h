@@ -106,8 +106,8 @@ void initFuelGauge()
   lc709203f_init(&g_fuelGauge, &params);
   delayMicroseconds(200);
   lc709203f_set_alarm_low_cell_voltage(&g_fuelGauge, 3600);
+  
 }
-
 
 void batteryAlarmCallback()
 {
