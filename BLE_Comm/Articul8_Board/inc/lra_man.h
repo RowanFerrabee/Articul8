@@ -4,7 +4,6 @@
 #include "msg_defs.h"
 #include "stdint.h"
 
-#define NUM_LRAS 8
 #define LRA_MAX_INTENSITY 127
 #define LRA_MIN_INTENSITY 0
 
@@ -15,6 +14,8 @@ void initLRAdrivers();
 struct LRACmd {
   LRACmd (PacketData data);
   uint8_t intensities[NUM_LRAS];
+  bool isSpinCmd;
+  float spinFreq;
 };
 
 void executeLRACommand(const LRACmd& lra_cmd);
