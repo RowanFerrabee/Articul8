@@ -2,8 +2,8 @@
 #define BtSerial Serial1
 
 #include "inc/msg_defs.h"
+#include "inc/batt_man.h"
 #include "inc/bt_man.h"
-#include "inc/calibration.h"
 #include "inc/imu_man.h"
 #include "inc/lra_man.h"
 #include "inc/fsm_man.h"
@@ -21,6 +21,11 @@ unsigned loopCounter = 0;
 bool command_available = false;
 
 void loop() {
+
+  if (battery_low_flag) {
+    delay(500);
+    return;
+  }
 
   loopCounter++;
   loopCounter %= 4;
@@ -46,13 +51,8 @@ void loop() {
             sendBTPacket(ackPacket.as_array);
             break;
 
-          case CALIBRATE:
-            calibrateDevice(btCommand.as_struct.data[0]);
-            sendBTPacket(reportOffsets());
-            break;
-
-          case OFFSET_REPORT:
-            sendBTPacket(reportOffsets());
+          case BATTERY_REPORT:
+            sendBTPacket(reportBatteryLevel(&g_fuelGauge));
             break;
           
           case STATE_CHANGE:

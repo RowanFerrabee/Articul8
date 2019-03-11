@@ -41,22 +41,21 @@ void dmpDataReady()
     mpuInterrupt = true;
 }
 
-bool initDMP(int xGyro, int yGyro, int zGyro, int xAccel, int yAccel, int zAccel)
+bool initDMP(int16_t xGyro, int16_t yGyro, int16_t zGyro, int16_t xAccel, int16_t yAccel, int16_t zAccel)
 {
-  (void)xGyro;
-  (void)yGyro;
-  (void)zGyro;
-  (void)xAccel;
-  (void)yAccel;
-  (void)zAccel;
-
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
-  mpu.setXGyroOffset(220); //Gyroscope: X = -3396 | Y = 53 | Z = 45
-  mpu.setYGyroOffset(76);
-  mpu.setZGyroOffset(-85);
-  mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+  // mpu.setXGyroOffset(220); //Gyroscope: X = -3396 | Y = 53 | Z = 45
+  // mpu.setYGyroOffset(76);
+  // mpu.setZGyroOffset(-85);
+  // mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+  mpu.setXGyroOffset(xGyro);
+  mpu.setYGyroOffset(yGyro);
+  mpu.setZGyroOffset(zGyro);
+  mpu.setXAccelOffset(xAccel);
+  mpu.setYAccelOffset(yAccel);
+  mpu.setZAccelOffset(zAccel);
 
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) {

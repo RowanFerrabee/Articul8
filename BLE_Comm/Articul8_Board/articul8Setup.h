@@ -3,6 +3,9 @@
 
 #define BtSerial Serial1
 
+//#define BOARD_3
+#define BOARD_1
+
 #include "inc/msg_defs.h"
 #include "inc/bt_man.h"
 #include <Wire.h>
@@ -88,7 +91,28 @@ void initMPU()
   if(!did_connect) { Serial.println("IMU testConnection failed"); while(1); }
 
   bool did_init = false;
-  did_init = initDMP(0,0,0,0,0,0);
+
+  int16_t accelResolution = 8;
+  int16_t xAccel, yAccel, zAccel;
+  xAccel = yAccel = zAccel = 0;
+
+  int16_t gyroResolution = 8;
+  int16_t xGyro, yGyro, zGyro;
+  xGyro = yGyro = zGyro = 0;
+
+  #ifdef BOARD_3
+  xAccel = -960/accelResolution;
+  yAccel = 2400/accelResolution;
+  zAccel = 6400/accelResolution;
+  xGyro = 35/gyroResolution;
+  yGyro = 35/gyroResolution;
+  #endif
+  #ifdef BOARD_1
+  xAccel = -27000/accelResolution;
+  yAccel = 1600/accelResolution;
+  zAccel = 9700/accelResolution;
+  #endif
+  did_init = initDMP(0, 0, 0, xAccel, yAccel, zAccel);
   if(!did_init) { Serial.println("DMP Init failed"); while(1); }
 
   dmpReady = true;  
