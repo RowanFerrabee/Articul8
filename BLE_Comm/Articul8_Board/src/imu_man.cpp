@@ -73,6 +73,12 @@ bool initDMP(int16_t xGyro, int16_t yGyro, int16_t zGyro, int16_t xAccel, int16_
   return (devStatus == 0);
 }
 
+void copyIn(void* dst, void* src, int* len, int nb)
+{
+  memcpy(((uchar*)dst) + *len, src, nb);
+  *len += nb;
+}
+
 bool checkForIMUPacket(void* dstPtr, int* len)
 {
   uchar* dst = (uchar*) dstPtr;
@@ -116,18 +122,21 @@ bool checkForIMUPacket(void* dstPtr, int* len)
       fifoCount -= packetSize;
 
       mpu.dmpGetQuaternion(&q, fifoBuffer);
-      mpu.dmpGetGravity(&gravity, &q);
-      mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-      
-      // mpu.dmpGetEuler(euler, &q);
-      // mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-      // mpu.dmpGetAccel(&aa, fifoBuffer);
-      // mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-
       float quat[] = {q.w, q.x, q.y, q.z};
 
-      *len = sizeof(float) * 4;
-      memcpy(dst, (uint8_t*) quat, *len);
+      VectorInt16 accelRaw, linAccel;
+      mpu.dmpGetAccel(&accelRaw, fifoBuffer);
+
+      VectorFloat gravityVec;
+      mpu.dmpGetGravity(&gravityVec, &q);
+
+      mpu.dmpGetLinearAccel(&linAccel, &accelRaw, &gravityVec);
+
+      unsigned now = millis();
+
+      copyIn(dst, quat, len, sizeof(float)*4);
+      copyIn(dst, &(linAccel.x), len, sizeof(int16_t));
+      copyIn(dst, &now, len, 3);
 
       return true;
   }
