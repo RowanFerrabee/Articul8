@@ -1,3 +1,7 @@
+import shapes3d.*; //<>//
+import shapes3d.animation.*;
+import shapes3d.utils.*;
+
 import processing.net.*; 
 import processing.serial.*;
 
@@ -20,6 +24,16 @@ boolean exercising = false;
 LRAMsg lastLraMsg;
 IMUMsg lastImuMsg;
 
+Ellipsoid upperLeg;
+int upperLegLength = 85;
+int upperLegRadius = 25;
+int lowerLegLength = 60;
+int lowerLegRadius = 15;
+Ellipsoid lowerLeg;
+
+Box foot;
+int footLength = 50;
+
 Quaternion to_global = new Quaternion(0,1,0,0);
 
 void setup() {
@@ -32,13 +46,24 @@ void setup() {
   fill(255);
   stroke(color(44,48,32));
 
-  tcpClient = new Client(this, "127.0.0.1", socketPort);
+  //tcpClient = new Client(this, "127.0.0.1", socketPort);
   
-  lastLraMsg = new LRAMsg();
-  lastImuMsg = new IMUMsg();
+  //lastLraMsg = new LRAMsg();
+  //lastImuMsg = new IMUMsg();
+  
+  upperLeg = new Ellipsoid(this, 20, 20);
+  upperLeg.setRadius(upperLegLength, upperLegRadius, upperLegRadius);
+  upperLeg.fill(#19BF38);
+
+  lowerLeg = new Ellipsoid(this, 20, 20);
+  lowerLeg.setRadius(lowerLegLength, lowerLegRadius, lowerLegRadius);
+  lowerLeg.fill(#19BF38);  
+  
+  foot = new Box(this, footLength, footLength/5.0, footLength*2.0/5.0);
 }
 
 void readPacket() {
+  
   byte[] rxBuffer = new byte[PACKET_SIZE];
 
   if (tcpClient.available() >= PACKET_SIZE)
@@ -68,67 +93,117 @@ void readPacket() {
   }
   
   tcpClient.clear();
-}
- //<>//
-void draw() {
-  readPacket();
   
-  background(0);
-  fill(255);
-  text(packets, 40, 40);
-  
-  strokeWeight(3);
-  stroke(255);
-  line(450, 0, 450, 540);
-  
-  noStroke();
-  
-  if (recording) {
-    fill(255, 0, 0);
-    ellipse(490,20,10,10);
-    text("Recording", 520, 25);
-  }
-  else if (exercising) {
-    fill(0, 255, 0);
-    ellipse(490,20,10,10);
-    text("Exercising", 520, 25);
-  }
-  
-  fill(0);
-  stroke(255);
-  strokeWeight(3);
-  ellipse(3.0*width/4.0, height/2.0, 150, 150);
 
-  noStroke();
+}
+
+float rz=0;
+float rx=0;
+
+float ankleAngle = 40;
+float kneeAngle = 40;
+
+float toRads(float deg) { return deg*PI/180; }
+
+void draw() {
+
+  lights();
+  directionalLight(255, 255, 255, -1, 0, 0);
+  background(0);
   
-  for (int i = 0; i < 8; i++) {
-    fill(2*lastLraMsg.intensities[i]);
-    ellipse(3.0*width/4.0 + 75*cos(i*3.1416/4), height/2.0 + 75*sin(i*3.1416/4), 20, 20);
+  ankleAngle += 1;
+  kneeAngle += 4;
+  
+  if(ankleAngle > 90 || kneeAngle > 180)
+  {
+    ankleAngle = 40;
+    kneeAngle = 40;
   }
   
-  if (lastImuMsg.validQuat) {
-    Quaternion quat = to_global.mult(lastImuMsg.quat);
-    PVector grav = getGravityVector(quat);
-    float mag = 500;
+  translate(400, 450);
+  foot.draw();
+  
+  float rAnkleAngle = toRads(ankleAngle);
+  float y = lowerLegLength*sin(rAnkleAngle); 
+  float x = lowerLegLength*cos(rAnkleAngle);
+  
+  translate(footLength/2 - x, -1*y);
+  rotateZ(rAnkleAngle);
+  lowerLeg.draw();
+  rotateZ(-1*rAnkleAngle);
+  //translate(x, y);
+  translate(-1*x, -1*y);
+  
+  float rKneeToHorizontal = toRads(kneeAngle - ankleAngle);
+  y = upperLegLength*sin(rKneeToHorizontal);
+  x = upperLegLength*cos(rKneeToHorizontal);
+  
+  translate(x, -y);
+  rotateZ(-rKneeToHorizontal);
+  upperLeg.draw();
+
+  
+  
+  
+  return;
+  //readPacket();
+  
+  //background(0);
+  //fill(255);
+  //text(packets, 40, 40);
+  
+  //strokeWeight(3);
+  //stroke(255);
+  //line(450, 0, 450, 540);
+  
+  //noStroke();
+  
+  //if (recording) {
+  //  fill(255, 0, 0);
+  //  ellipse(490,20,10,10);
+  //  text("Recording", 520, 25);
+  //}
+  //else if (exercising) {
+  //  fill(0, 255, 0);
+  //  ellipse(490,20,10,10);
+  //  text("Exercising", 520, 25);
+  //}
+  
+  //fill(0);
+  //stroke(255);
+  //strokeWeight(3);
+  //ellipse(3.0*width/4.0, height/2.0, 150, 150);
+
+  //noStroke();
+  
+  //for (int i = 0; i < 8; i++) {
+  //  fill(2*lastLraMsg.intensities[i]);
+  //  ellipse(3.0*width/4.0 + 75*cos(i*3.1416/4), height/2.0 + 75*sin(i*3.1416/4), 20, 20);
+  //}
+  
+  //if (lastImuMsg.validQuat) {
+  //  Quaternion quat = to_global.mult(lastImuMsg.quat);
+  //  PVector grav = getGravityVector(quat);
+  //  float mag = 500;
     
-    pushMatrix();
-    translate(width/4.0, height/2.0, -100);
-    rotate(quat.getAngle(), quat.getAxisX(), quat.getAxisY(), quat.getAxisZ());
-    scale(90);
-    TexturedCube(textures);
-    popMatrix();
+  //  pushMatrix();
+  //  translate(width/4.0, height/2.0, -100);
+  //  rotate(quat.getAngle(), quat.getAxisX(), quat.getAxisY(), quat.getAxisZ());
+  //  scale(90);
+  //  TexturedCube(textures);
+  //  popMatrix();
     
-    pushMatrix();
-    translate(width/4.0, height/2.0, -100);
-    stroke(255);
-    strokeWeight(3);
-    noFill();
-    beginShape(LINES);
-    vertex(0, 0, 0);
-    vertex(mag * grav.x, mag * grav.y, mag * grav.z);
-    endShape();
-    popMatrix();
-  }
+  //  pushMatrix();
+  //  translate(width/4.0, height/2.0, -100);
+  //  stroke(255);
+  //  strokeWeight(3);
+  //  noFill();
+  //  beginShape(LINES);
+  //  vertex(0, 0, 0);
+  //  vertex(mag * grav.x, mag * grav.y, mag * grav.z);
+  //  endShape();
+  //  popMatrix();
+  //}
 }
 
 void keyPressed() {
