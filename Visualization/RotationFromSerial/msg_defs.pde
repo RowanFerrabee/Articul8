@@ -1,8 +1,10 @@
 // packet related defs
 
-static char PACKET_SIZE = 19;
+static char QUAT_MSG = 100;
+
+static char PACKET_SIZE = 24;
 static char PACKET_OVERHEAD = 2;
-static char SOP = 253; //TODO
+static byte SOP = (byte)253; //TODO
 static char POS_SOP = 0;
 static char POS_DATA = 1;
 static char POS_CHECKSUM = char(PACKET_SIZE-1);
@@ -36,13 +38,15 @@ static boolean isValidPacket(byte[] packet, int packet_size) {
     return false;
   }
   //char sum = 0;
-  //for (int i = 0; i < POS_CHECKSUM; i++) {
+  //for (int i = 1; i < POS_CHECKSUM; i++) {
   //  sum += packet[i];
   //}
+  
   //if (packet[POS_CHECKSUM] != sum) {
   //  println("Invalid checksum");
   //  return false;
   //}
+  
   return true;
 }
 
