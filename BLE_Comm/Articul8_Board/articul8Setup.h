@@ -3,9 +3,6 @@
 
 #define BtSerial Serial1
 
-//#define BOARD_3
-#define BOARD_1
-
 #include "inc/msg_defs.h"
 #include "inc/bt_man.h"
 #include <Wire.h>
@@ -93,26 +90,15 @@ void initMPU()
   bool did_init = false;
 
   int16_t accelResolution = 8;
-  int16_t xAccel, yAccel, zAccel;
-  xAccel = yAccel = zAccel = 0;
+  int16_t xAccel = ACCEL_OFFSET_X / accelResolution;
+  int16_t yAccel = ACCEL_OFFSET_Y / accelResolution;
+  int16_t zAccel = ACCEL_OFFSET_Z / accelResolution;
 
   int16_t gyroResolution = 8;
   int16_t xGyro, yGyro, zGyro;
   xGyro = yGyro = zGyro = 0;
 
-  #ifdef BOARD_3
-  xAccel = -960/accelResolution;
-  yAccel = 2400/accelResolution;
-  zAccel = 6400/accelResolution;
-  xGyro = 35/gyroResolution;
-  yGyro = 35/gyroResolution;
-  #endif
-  #ifdef BOARD_1
-  xAccel = -27000/accelResolution;
-  yAccel = 1600/accelResolution;
-  zAccel = 9700/accelResolution;
-  #endif
-  did_init = initDMP(0, 0, 0, xAccel, yAccel, zAccel);
+  did_init = initDMP(xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
   if(!did_init) { Serial.println("DMP Init failed"); while(1); }
 
   dmpReady = true;  
@@ -130,8 +116,8 @@ void initFuelGauge()
   lc709203f_init(&g_fuelGauge, &params);
   delayMicroseconds(200);
   lc709203f_set_alarm_low_cell_voltage(&g_fuelGauge, 3600);
-  
 }
+
 
 void batteryAlarmCallback()
 {

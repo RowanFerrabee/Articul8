@@ -23,6 +23,8 @@ private:
   int period = 1000;
   int lastCycleStart;
 
+  float spinFreq = 0;
+
   Packet standbyPacket;
   int timeout = 0;
   bool newImuPacket = false;
@@ -41,7 +43,12 @@ public:
     
     standbyPacket.as_struct.checksum = SOP + ACK;
     lra_rotate_setup();
-    // lra_rotate_setIntensity(LRA_MAX_INTENSITY);
+    lra_rotate_setIntensity(LRA_MAX_INTENSITY);
+  }
+
+  void setSpinFreq(float spinFreq) {
+    this->spinFreq = spinFreq;
+    lra_rotate_setFrequency(spinFreq);
   }
 
   void changeState(uchar state, int period) {
@@ -61,15 +68,16 @@ public:
 
   void lra_fsm(int ms)
   {
-    return;
-    lra_rotate_count(ms);
-    int intensities[NUM_LRAS];
-    bool changed[NUM_LRAS];
-    lra_rotate_getOutputs(intensities, changed);
-    for(int i = 0; i < NUM_LRAS; ++i)
-    {
-      if(changed[i])
+    if (spinFreq != 0) {
+      lra_rotate_count(ms);
+      int intensities[NUM_LRAS*2] = {0, 0, 0, 0, 0, 0, 0, 0};
+      lra_rotate_getOutputs(intensities);
+
+      for(int i = 0; i < NUM_LRAS; ++i)
+      {
+        // setLRAIntensity(i, 0);
         setLRAIntensity(i, intensities[i]);
+      }
     }
   }
 

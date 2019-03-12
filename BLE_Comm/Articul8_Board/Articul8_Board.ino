@@ -4,6 +4,7 @@
 #include "inc/msg_defs.h"
 #include "inc/batt_man.h"
 #include "inc/bt_man.h"
+#include "inc/calibration.h"
 #include "inc/imu_man.h"
 #include "inc/lra_man.h"
 #include "inc/fsm_man.h"
@@ -51,6 +52,15 @@ void loop() {
             sendBTPacket(ackPacket.as_array);
             break;
 
+          case CALIBRATE:
+            calibrateDevice(btCommand.as_struct.data[0]);
+            sendBTPacket(reportOffsets());
+            break;
+
+          case OFFSET_REPORT:
+            sendBTPacket(reportOffsets());
+            break;
+
           case BATTERY_REPORT:
             sendBTPacket(reportBatteryLevel(&g_fuelGauge));
             break;
@@ -62,11 +72,20 @@ void loop() {
     
           case LRA_CONTROL:
             LRACmd lra_cmd((uchar *)btCommand.as_struct.data);
-            executeLRACommand(lra_cmd);
+            if (lra_cmd.isSpinCmd)
+            {
+              fsm_man.setSpinFreq(lra_cmd.spinFreq);
+            }
+            else
+            {
+              fsm_man.setSpinFreq(0);
+              executeLRACommand(lra_cmd);
+            }
             sendBTPacket(ackPacket.as_array);
             break;
         }
       }
+      
       command_available = false;
       break;
       

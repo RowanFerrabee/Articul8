@@ -28,26 +28,35 @@ void initLRAdrivers() {
 
 LRACmd::LRACmd (PacketData data)
 {
-  for (int i = 0; i < NUM_LRAS; i++) {
-    intensities[i] = data[i];
+  if (data[0] == LRA_SPIN)
+  {
+    isSpinCmd = true;
+    memcpy(&spinFreq, data+1, sizeof(float));
+  }
+  else
+  {
+    isSpinCmd = false;
+    for (int i = 0; i < NUM_LRAS; i++) {
+      intensities[i] = data[i+1];
+    }
   }
 }
 
 void executeLRACommand(const LRACmd& lra_cmd)
 {
   for (uint8_t id = 0; id < NUM_LRAS; id++)
-  {
-    if (lra_cmd.intensities[id] != lraIntensities[id] && lra_cmd.intensities[id] <= LRA_MAX_INTENSITY)
-    {
-      lraIntensities[id] = lra_cmd.intensities[id];
-      lraWriteByte(id, 0x02, lra_cmd.intensities[id]);
-    }
-  }
+    setLRAIntensity(id, lra_cmd.intensities[id]); 
 }
+
+int cachedIntensities[16] = {-1, -1, -1, -1,    -1, -1, -1, -1};
 
 void setLRAIntensity(unsigned id, unsigned intensity)
 {
-  if(id < NUM_LRAS && intensity <= LRA_MAX_INTENSITY)
-      lraWriteByte(id, 0x02, intensity);    
-  
+  if(id < NUM_LRAS && intensity <= LRA_MAX_INTENSITY
+   && intensity != cachedIntensities[id]
+   )
+  {
+      lraWriteByte(id, 0x02, intensity); 
+      cachedIntensities[id] = intensity;    
+  }
 }
