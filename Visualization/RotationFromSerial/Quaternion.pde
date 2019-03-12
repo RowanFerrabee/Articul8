@@ -68,12 +68,6 @@ static class Quaternion {
     return -z/sin(angle/2);
   }
   
-  PVector rotateVec(PVector vec) {
-    Quaternion q = new Quaternion(0.0, vec.x, vec.y, vec.z);
-    Quaternion rot = this.mult(q).mult(this.getInverse());
-    return new PVector(rot.x, rot.y, rot.z);
-  }
-  
   float w, x, y, z, angle;
   float default_x = 1.0;
   float default_y = 0.0;

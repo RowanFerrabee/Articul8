@@ -1,10 +1,8 @@
 // packet related defs
 
-static char QUAT_MSG = 100;
-
-static char PACKET_SIZE = 24;
+static char PACKET_SIZE = 19;
 static char PACKET_OVERHEAD = 2;
-static byte SOP = (byte)253; //TODO
+static char SOP = 253; //TODO
 static char POS_SOP = 0;
 static char POS_DATA = 1;
 static char POS_CHECKSUM = char(PACKET_SIZE-1);
@@ -20,13 +18,19 @@ static char STATE_CHANGE_MSG = 3;
 static char IMU_DATA_MSG = 4;
 static char LRA_CONTROL_MSG = 5;
 static char GUI_CONTROL_MSG = 6;
-static char NUM_MSG_TYPES = 7;
+static char CALIBRATE_MSG = 7;
+static char OFFSET_REPORT_MSG = 8;
+static char BATTERY_REPORT_MSG = 9;
+static char NUM_MSG_TYPES = 10;
 
 static char START_RECORDING = 0;
 static char STOP_RECORDING = 1;
 static char START_EXERCISE = 2;
 static char STOP_EXERCISE = 3;
 static char PRINT_RECORDING = 4;
+static char CALIBRATE = 5;
+static char REPORT_OFFSETS = 6;
+static char PRINT_BATTERY = 7;
 
 static boolean isValidPacket(byte[] packet, int packet_size) {
   if (packet_size != PACKET_SIZE) {
@@ -38,15 +42,13 @@ static boolean isValidPacket(byte[] packet, int packet_size) {
     return false;
   }
   //char sum = 0;
-  //for (int i = 1; i < POS_CHECKSUM; i++) {
+  //for (int i = 0; i < POS_CHECKSUM; i++) {
   //  sum += packet[i];
   //}
-  
   //if (packet[POS_CHECKSUM] != sum) {
   //  println("Invalid checksum");
   //  return false;
   //}
-  
   return true;
 }
 
