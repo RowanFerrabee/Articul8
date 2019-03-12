@@ -8,10 +8,10 @@ import shapes3d.animation.*;
 import shapes3d.utils.*;
 
 Ellipsoid upperLeg;
-int upperLegLength = 85;
-int upperLegRadius = 25;
-int lowerLegLength = 60;
-int lowerLegRadius = 15;
+int upperLegLength = 55;
+int upperLegRadius = 15;
+int lowerLegLength = 40;
+int lowerLegRadius = 10;
 Ellipsoid lowerLeg;
 Box foot;
 int footLength = 50;
@@ -55,6 +55,7 @@ static LRAMsg[][] lastLraMsg;
 static Quaternion[][] segQuats;
 static Quaternion[][] initialSegQuats;
 static boolean[][] gotInitialVals;
+static float[][] spinFreqs;
 
 Quaternion to_global = new Quaternion(0, 1, 0, 0);
 static Quaternion rotQs;
@@ -68,14 +69,15 @@ void setup() {
     textures[i] = loadImage(texNames[i]);
   }
   textureMode(NORMAL);
-  fill(255);
-  stroke(color(44, 48, 32)); //<>//
+  fill(255); //<>//
+  stroke(color(44, 48, 32));
 
   tcpClient = new Client(this, "127.0.0.1", socketPort);
   lastLraMsg = new LRAMsg[N_SIDES][BANDS_PER_SIDE];
   segQuats = new Quaternion[N_SIDES][BANDS_PER_SIDE];
   initialSegQuats = new Quaternion[N_SIDES][BANDS_PER_SIDE];
   gotInitialVals = new boolean[N_SIDES][BANDS_PER_SIDE];
+  spinFreqs = new float[N_SIDES][BANDS_PER_SIDE];
   
   for(int i = 0; i < N_SIDES; i++)
   {
@@ -85,6 +87,7 @@ void setup() {
       segQuats[i][j] = new Quaternion(1, 0, 0, 0);
       initialSegQuats[i][j] = new Quaternion(1, 0, 0, 0);
       gotInitialVals[i][j] = false;
+      spinFreqs[i][j] = 0;
     }
   }
   
@@ -163,58 +166,6 @@ static class Buffer {
       }
     }
     
-    //print(nb, " ", rxBufLen, " ", rxBufLen1, "\n");
-    
-    //int offset = 0;
-    //while(offset < nb)
-    //{
-    //  if(rxBufLen > 0 && rxBufLen < PACKET_SIZE)
-    //  {
-    //    int space = PACKET_SIZE - rxBufLen;
-    //    int nCopy = min(space, nb-offset);
-    //    print("Copying 0\n");
-    //    System.arraycopy(tmp, offset, rxbuf, rxBufLen, nCopy);
-    //    rxBufLen += nCopy;
-    //    offset += nCopy;
-    //  }
-    //  else if(rxBufLen1 > 0 && rxBufLen1 < PACKET_SIZE)
-    //  {
-    //    int space = PACKET_SIZE - rxBufLen1;
-    //    int nCopy = min(space, nb-offset);
-    //    print("Copying 1\n");
-    //    System.arraycopy(tmp, offset, rxbuf1, rxBufLen1, nCopy);
-    //    rxBufLen1 += nCopy;
-    //    offset += nCopy;
-    //  }
-    //  else
-    //  {
-    //    int o = 0;
-    //    while(o < nb && tmp[offset+o] != (byte)253)
-    //      o++;
-        
-    //    int nCopy = min(nb - o, PACKET_SIZE);
-    //    if(nCopy > 0)
-    //    {
-    //      if(rxBufLen == PACKET_SIZE && rxBufLen1 == 0)
-    //      {
-    //        System.arraycopy(tmp, offset+o, rxbuf1, 0, nCopy);
-    //        print("Copying -- 1\n");
-    //        rxBufLen1 = nCopy;
-    //        offset += o + nCopy;
-    //      }
-    //      else
-    //      {
-    //        System.arraycopy(tmp, o, rxbuf, 0, nCopy);
-    //        //print("Copying ", nCopy, " -- 0\n");
-    //        rxBufLen = nCopy;    
-    //        offset += o + nCopy;
-    //      }
-    //    }
-  
-    //  }
-    
-    //}
-    
     return;
   }
   
@@ -258,7 +209,6 @@ static class Buffer {
         {
           gotInitialVals[left][upper] = true;
           initialSegQuats[left][upper] = new Quaternion(w, x, y, z);
-          print("hitit\n");
         }
         
         if(gotInitialVals[left][upper])
@@ -275,9 +225,7 @@ static class Buffer {
         }
       }
       segQuats[left][upper] = new Quaternion(w, x, y, z);
-      //print(Integer.toString(left) + ":" + Integer.toString(upper) + "\n");
-      
-      //printQuat(segQuats[left][upper]);
+
       return true;
     }
     else if (buf[1] == GUI_LRA_MSG)
@@ -288,8 +236,11 @@ static class Buffer {
 
       if (isSpin != 0) {
         // TODO: handle spin
+        spinFreqs[left][upper] = ByteBuffer.wrap(buf, 5, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
         return true;
       }
+
+      spinFreqs[left][upper] = 0;
 
       int numLRAs = 6;
       if (upper == 1) {
@@ -337,72 +288,42 @@ boolean readPacket() {
 }
 
 void draw() {
-  if(readPacket())
+  while(readPacket())
     packets++;
     
   background(0);
 
+  textSize(14);
   text(packets, 40, 40);
-
-  camera(0.0, -500.0, -60.0,
-          0, 0, 0,
-          0, 0, 1);
-
-  lights();
-  directionalLight(255, 255, 255, -1, 0, 0);
-
-  stroke(255, 0, 0);
-  line(0, 0, 0, 50, 0, 0);  // red x
-  stroke(0, 0, 255);
-  line(0, 0, 0, 0, 50, 0);  // blue y
-  stroke(0, 255, 0);
-  line(0, 0, 0, 0, 0, -50); // green z
 
   stroke(255, 0, 255);
   
-  //strokeWeight(3);
-  //stroke(255);
-  //line(450, 0, 450, 540);
-  //noStroke();
-
-  pushMatrix();
-  rotateY((float)Math.PI/2);
-  rotateX((float)Math.PI/2);
-  rotateZ((float)Math.PI/2);
+  strokeWeight(3);
+  stroke(255);
+  line(450, 0, 450, 540);
+  noStroke();
   
-  int xCoord = 200;
-  int yCoord = -100;
+  int textXCoord = 630;
+  int textYCoord = 70;
   if (recording) {
     stroke(255, 0, 0);
     fill(255, 0, 0);
-    ellipse(xCoord, yCoord, 10, 10);
-    text("Recording", xCoord, yCoord+20);
+    ellipse(textXCoord, textYCoord, 10, 10);
+    text("Recording", textXCoord+15, textYCoord+6);
   } else if (exercising) {
     stroke(0, 255, 0);
     fill(0, 255, 0);
-    ellipse(xCoord, yCoord, 10, 10);
-    text("Exercising", xCoord, yCoord+20);
+    ellipse(textXCoord, textYCoord, 10, 10);
+    text("Exercising", textXCoord+15, textYCoord+6);
   }
+  
+  while(readPacket())
+    packets++;
 
+  int xCoord = 675;
+  int yCoord = 0;
   if (lastLraMsg[0][0] != null) {
     int numLRAs = lastLraMsg[0][0].numLRAs;
-    fill(0);
-    stroke(255);
-    strokeWeight(3);
-    ellipse(xCoord - 350, yCoord+200, 150, 150);
-    noStroke();
-  
-    for (int i = 0; i < numLRAs; i++) {
-      float angle = 2*PI/numLRAs;
-      fill(2*lastLraMsg[0][0].intensities[i]);
-      ellipse(xCoord - 350 + 75*cos(i*angle), yCoord+200 + 75*sin(i*angle), 20, 20);
-    }
-    fill(255);
-    textSize(20);
-    text("Shin", xCoord-367, yCoord+205);
-  }
-  if (lastLraMsg[0][1] != null) {
-    int numLRAs = lastLraMsg[0][1].numLRAs;
     fill(0);
     stroke(255);
     strokeWeight(3);
@@ -411,19 +332,57 @@ void draw() {
   
     for (int i = 0; i < numLRAs; i++) {
       float angle = 2*PI/numLRAs;
-      fill(2*lastLraMsg[0][1].intensities[i]);
+      fill(2*lastLraMsg[0][0].intensities[i]);
       ellipse(xCoord + 75*cos(i*angle), yCoord+200 + 75*sin(i*angle), 20, 20);
+    }
+    
+    noFill();
+    stroke(255);
+    if (spinFreqs[0][0] < -0.01) {
+      arc(xCoord, yCoord+200, 170, 170, 0, HALF_PI);
+      line(xCoord, yCoord+200+170, 10+xCoord, 10+yCoord+200+85);
+    }
+    if (spinFreqs[0][0] > 0.01) {
+      arc(xCoord, yCoord+200, 170, 170, -HALF_PI, 0);
+      line(xCoord, yCoord+200-170, 10+xCoord, 10+yCoord+200-85);
     }
     fill(255);
     textSize(20);
-    text("Thigh", xCoord-25, yCoord+205);
+    text("Shin", xCoord-23, yCoord+205);
+  }
+  if (lastLraMsg[0][1] != null) {
+    int numLRAs = lastLraMsg[0][1].numLRAs;
+    fill(0);
+    stroke(255);
+    strokeWeight(3);
+    ellipse(xCoord, yCoord+400, 150, 150);
+    noStroke();
+  
+    for (int i = 0; i < numLRAs; i++) {
+      float angle = 2*PI/numLRAs;
+      fill(2*lastLraMsg[0][1].intensities[i]);
+      ellipse(xCoord + 75*cos(i*angle), yCoord+400 + 75*sin(i*angle), 20, 20);
+    }
+    
+    noFill();
+    stroke(255);
+    if (spinFreqs[0][1] < -0.01) {
+      arc(xCoord, yCoord+400, 170, 170, 0, HALF_PI);
+      line(xCoord, yCoord+400+170, 10+xCoord, 10+yCoord+400+85);
+    }
+    if (spinFreqs[0][1] > 0.01) {
+      arc(xCoord, yCoord+400, 170, 170, -HALF_PI, 0);
+      line(xCoord, yCoord+400-170, 10+xCoord, 10+yCoord+400-85);
+    }
+    fill(255);
+    textSize(20);
+    text("Thigh", xCoord-25, yCoord+405);
     
   }
-  
-  popMatrix();
-  //foot.draw();
-  //translate(0, footLength/2, 0);
-  
+
+  while(readPacket())
+    packets++;
+
   if(gotInitialVals[0][0] && gotInitialVals[0][1])
   {
     stroke(255);
@@ -439,63 +398,59 @@ void draw() {
     if(rFoot_LowLeg.x * rKnee_UpperLeg.x > lowerLegLength * upperLegLength / 10)
     {
       rotQt = new Quaternion((float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2)).mult(rotQt);
-      print("ASDF");
+      print("Switching view orientation");
     }
     
-    line(0, 0, 0,
-        rFoot_LowLeg.x, rFoot_LowLeg.y, -rFoot_LowLeg.z);
-        
-    line(rFoot_LowLeg.x, rFoot_LowLeg.y, -rFoot_LowLeg.z,
-         rFoot_LowLeg.x + rKnee_UpperLeg.x, rFoot_LowLeg.y + rKnee_UpperLeg.y, -rFoot_LowLeg.z  - rKnee_UpperLeg.z
+    int plotXOffset = 140;
+    int plotYOffset = 150;
+    
+    // XY Plot
+    stroke(255);
+    text("Top", plotXOffset+100, plotYOffset-40);
+    text(" x", plotXOffset+70, plotYOffset);
+    text(" y", plotXOffset, plotYOffset-70);
+    stroke(255,0,0);
+    line(plotXOffset, plotYOffset, plotXOffset+70, plotYOffset);
+    stroke(0,0,255);
+    line(plotXOffset, plotYOffset, plotXOffset, plotYOffset-70);
+    stroke(255,0,255);
+    line(plotXOffset, plotYOffset, -rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.y + plotYOffset);
+    line(-rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.y + plotYOffset,
+         -rFoot_LowLeg.x + plotXOffset + -rKnee_UpperLeg.x, -rFoot_LowLeg.y + plotYOffset + -rKnee_UpperLeg.y
+    );
+
+    // XZ Plot
+    plotYOffset += 170;
+    stroke(255);
+    text("Side", plotXOffset+100, plotYOffset-40);
+    text(" x", plotXOffset+70, plotYOffset);
+    text(" z", plotXOffset, plotYOffset-70);
+    stroke(255,0,0);
+    line(plotXOffset, plotYOffset, plotXOffset+70, plotYOffset);
+    stroke(0,255,0);
+    line(plotXOffset, plotYOffset, plotXOffset, plotYOffset-70);
+    stroke(255,0,255);
+    line(plotXOffset, plotYOffset, -rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.z + plotYOffset);
+    line(-rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.z + plotYOffset,
+         -rFoot_LowLeg.x + plotXOffset + -rKnee_UpperLeg.x, -rFoot_LowLeg.z + plotYOffset + -rKnee_UpperLeg.z
     );
     
+    // YZ Plot
+    plotYOffset += 170;
+    stroke(255);
+    text("Front", plotXOffset+100, plotYOffset-40);
+    text(" y", plotXOffset+70, plotYOffset);
+    text(" z", plotXOffset, plotYOffset-70);
+    stroke(0,0,255);
+    line(plotXOffset, plotYOffset, plotXOffset+70, plotYOffset);
+    stroke(0,255,0);
+    line(plotXOffset, plotYOffset, plotXOffset, plotYOffset-70);
+    stroke(255,0,255);
+    line(plotXOffset, plotYOffset, -rFoot_LowLeg.y + plotXOffset, -rFoot_LowLeg.z + plotYOffset);
+    line(-rFoot_LowLeg.y + plotXOffset, -rFoot_LowLeg.z + plotYOffset,
+         -rFoot_LowLeg.y + plotXOffset + -rKnee_UpperLeg.y, -rFoot_LowLeg.z + plotYOffset + -rKnee_UpperLeg.z
+    );
   }
-  
-  
-      
-  
-  //print(Float.toString(rFoot_LowLeg.x) + " " + Float.toString(rFoot_LowLeg.y) + " " + Float.toString(rFoot_LowLeg.z) + "\n");
-  ////translate(rFoot_LowLeg.x,rFoot_LowLeg.y,rFoot_LowLeg.z); 
-  //translate(0,0,rFoot_LowLeg.z); 
-  ////translate(rFoot_LowLeg.x,rFoot_LowLeg.y);
-  //rotate(lowerQuat.getAngle(), lowerQuat.getAxisX(), lowerQuat.getAxisY(), lowerQuat.getAxisZ());
-  //lowerLeg.draw();
-  //rotate(-lowerQuat.getAngle(), lowerQuat.getAxisX(), lowerQuat.getAxisY(), lowerQuat.getAxisZ());
-  //translate(rFoot_LowLeg.x,rFoot_LowLeg.y,rFoot_LowLeg.z); 
-
-  //translate(rKnee_UpperLeg.x,rKnee_UpperLeg.y,rKnee_UpperLeg.z);
-  //rotate(upperQuat.getAngle(), upperQuat.getAxisX(), upperQuat.getAxisY(), upperQuat.getAxisZ());
-  //upperLeg.draw();
-  //rotate(-upperQuat.getAngle(), upperQuat.getAxisX(), upperQuat.getAxisY(), upperQuat.getAxisZ());
-  
-  //for(int i = 0; i < BANDS_PER_SIDE; i++)
-  //{
-  //  Quaternion quat = segQuats[0][i];
-    
-  //  //Quaternion quat = to_global.mult(segQuats[0][i]);
-  //  //PVector grav = getGravityVector(quat);
-  //  //float mag = 500;
-  
-  //  pushMatrix();
-  //  translate(width/4.0, height/4.0*i, -100);
-  //  rotate(quat.getAngle(), quat.getAxisX(), quat.getAxisY(), quat.getAxisZ());
-  //  scale(90);
-  //  TexturedCube(textures);
-  //  popMatrix();
-  
-  //  //pushMatrix();
-  //  //translate(width/4.0, height/2.0, -100);
-  //  //stroke(255);
-  //  //strokeWeight(3);
-  //  //noFill();
-  //  //beginShape(LINES);
-  //  //vertex(0, 0, 0);
-  //  //vertex(mag * grav.x, mag * grav.y, mag * grav.z);
-  //  //endShape();
-  //  //popMatrix();
-    
-    
-  //}
 }
 
 void keyPressed() {
@@ -533,67 +488,28 @@ void keyPressed() {
     tcpClient.write(guiControlMsg);
   }
 
+  if (key == 'b')
+  {
+    guiControlMsg[POS_DATA+1] = byte(PRINT_BATTERY);
+    tcpClient.write(guiControlMsg);
+  }
+
+  if (key == 'o')
+  {
+    guiControlMsg[POS_DATA+1] = byte(REPORT_OFFSETS);
+    tcpClient.write(guiControlMsg);
+  }
+
+  if (key == 'c')
+  {
+    guiControlMsg[POS_DATA+1] = byte(CALIBRATE);
+    tcpClient.write(guiControlMsg);
+  }
+
   if (key == ' ')
   {
     to_global = segQuats[0][0].getInverse();
     start_time = millis();
     packets = 0;
   }
-}
-
-void TexturedCube(PImage[] texs) {
-  // +Z "front" face
-  beginShape(QUADS);
-  //texture(texs[0]);
-  fill(255, 255, 0);
-  vertex(-1, -1, 1);
-  vertex( 1, -1, 1);
-  vertex( 1, 1, 1);
-  vertex(-1, 1, 1);
-  endShape();
-
-  // -Z "back" face
-  beginShape(QUADS);
-  fill(255, 0, 255);
-  vertex( 1, -1, -1);
-  vertex(-1, -1, -1);
-  vertex(-1, 1, -1);
-  vertex( 1, 1, -1);
-  endShape();
-
-  // +Y "bottom" face
-  beginShape(QUADS);
-  fill(0, 0, 255);
-  vertex(-1, 1, 1);
-  vertex( 1, 1, 1);
-  vertex( 1, 1, -1);
-  vertex(-1, 1, -1);
-  endShape();
-
-  // -Y "top" face
-  beginShape(QUADS);
-  fill(255);
-  vertex(-1, -1, -1);
-  vertex( 1, -1, -1);
-  vertex( 1, -1, 1);
-  vertex(-1, -1, 1);
-  endShape();
-
-  // +X "right" face
-  beginShape(QUADS);
-  fill(0, 255, 255);
-  vertex( 1, -1, 1);
-  vertex( 1, -1, -1);
-  vertex( 1, 1, -1);
-  vertex( 1, 1, 1);
-  endShape();
-
-  // -X "left" face
-  beginShape(QUADS);
-  fill(255, 0, 0);
-  vertex(-1, -1, -1);
-  vertex(-1, -1, 1);
-  vertex(-1, 1, 1);
-  vertex(-1, 1, -1);
-  endShape();
 }

@@ -21,13 +21,19 @@ static char STATE_CHANGE_MSG = 3;
 static char IMU_DATA_MSG = 4;
 static char LRA_CONTROL_MSG = 5;
 static char GUI_CONTROL_MSG = 6;
-static char NUM_MSG_TYPES = 7;
+static char CALIBRATE_MSG = 7;
+static char OFFSET_REPORT_MSG = 8;
+static char BATTERY_REPORT_MSG = 9;
+static char NUM_MSG_TYPES = 10;
 
 static char START_RECORDING = 0;
 static char STOP_RECORDING = 1;
 static char START_EXERCISE = 2;
 static char STOP_EXERCISE = 3;
 static char PRINT_RECORDING = 4;
+static char CALIBRATE = 5;
+static char REPORT_OFFSETS = 6;
+static char PRINT_BATTERY = 7;
 
 static boolean isValidPacket(byte[] packet, int packet_size) {
   if (packet_size != PACKET_SIZE) {
