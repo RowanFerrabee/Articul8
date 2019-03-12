@@ -38,8 +38,8 @@ uchar* reportOffsets() {
 	int16_t xGyro = mpu.getXGyroOffset();
 	int16_t yGyro = mpu.getYGyroOffset();
 	int16_t zGyro = mpu.getZGyroOffset();
-	mpu.getAcceleration(&xAccel, &yAccel, &zAccel);
-	mpu.getRotation(&xGyro, &yGyro, &zGyro);
+	// mpu.getAcceleration(&xAccel, &yAccel, &zAccel);
+	// mpu.getRotation(&xGyro, &yGyro, &zGyro);
 
 	memcpy(offsetReport.as_struct.data,    &xAccel, sizeof(xAccel));
 	memcpy(offsetReport.as_struct.data+2,  &yAccel, sizeof(yAccel));

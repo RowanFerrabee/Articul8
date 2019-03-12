@@ -3,26 +3,26 @@
 
 typedef unsigned char uchar;
 
-#define BOARD_3 3
-#define BOARD_1 1
+// #define BOARD_3 3
+// #define BOARD_1 1
 
-#define BOARD BOARD_3
+// #define BOARD BOARD_3
 
-#if (BOARD == BOARD_3)
+// #if (BOARD == BOARD_3)
 
-    #define NUM_LRAS 8
-    #define ACCEL_OFFSET_X -960
-    #define ACCEL_OFFSET_Y 2400
-    #define ACCEL_OFFSET_Z 6400
+    // #define NUM_LRAS 8
+    // #define ACCEL_OFFSET_X -960
+    // #define ACCEL_OFFSET_Y 2400
+    // #define ACCEL_OFFSET_Z 6400
 
-#elif (BOARD == BOARD_1)
+// #elif (BOARD == BOARD_1)
 
     #define NUM_LRAS 6
     #define ACCEL_OFFSET_X -27000
     #define ACCEL_OFFSET_Y 1600
     #define ACCEL_OFFSET_Z 9700
 
-#endif
+// #endif
 
 #define PACKET_SIZE 24
 #define PACKET_OVERHEAD 3

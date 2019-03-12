@@ -52,10 +52,10 @@ void loop() {
             sendBTPacket(ackPacket.as_array);
             break;
 
-          case CALIBRATE:
-            calibrateDevice(btCommand.as_struct.data[0]);
-            sendBTPacket(reportOffsets());
-            break;
+          // case CALIBRATE:
+          //   calibrateDevice(btCommand.as_struct.data[0]);
+          //   sendBTPacket(reportOffsets());
+          //   break;
 
           case OFFSET_REPORT:
             sendBTPacket(reportOffsets());
