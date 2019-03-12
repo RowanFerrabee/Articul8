@@ -1,6 +1,7 @@
 // packet related defs
 
-static char QUAT_MSG = 100;
+static char GUI_QUAT_MSG = 100;
+static char GUI_LRA_MSG = 101;
 
 static char PACKET_SIZE = 24;
 static char PACKET_OVERHEAD = 2;
@@ -84,19 +85,20 @@ static class IMUMsg {
 
 static class LRAMsg {
   public byte[] intensities;
-  public static int NUM_LRAS = 8;
+  public int numLRAs;
   
-  public LRAMsg() {
-    intensities = new byte [NUM_LRAS];
-    for (int i = 0; i < NUM_LRAS; i++) {
+  public LRAMsg(int _numLRAs) {
+    numLRAs = _numLRAs;
+    intensities = new byte [numLRAs];
+    for (int i = 0; i < numLRAs; i++) {
       intensities[i] = 0;
     }
   }
 
-  public static LRAMsg fromBytes(byte[] packet) {
-    LRAMsg lraMsg = new LRAMsg();
-    for (int i = 0; i < NUM_LRAS; i++) {
-      lraMsg.intensities[i] = packet[i+2];
+  public static LRAMsg fromBytes(byte[] packet, int _numLRAs) {
+    LRAMsg lraMsg = new LRAMsg(_numLRAs);
+    for (int i = 0; i < _numLRAs; i++) {
+      lraMsg.intensities[i] = packet[i+5];
     }
     return lraMsg;
   }

@@ -69,7 +69,7 @@ void setup() {
   }
   textureMode(NORMAL);
   fill(255);
-  stroke(color(44, 48, 32));
+  stroke(color(44, 48, 32)); //<>//
 
   tcpClient = new Client(this, "127.0.0.1", socketPort);
   lastLraMsg = new LRAMsg[N_SIDES][BANDS_PER_SIDE];
@@ -81,7 +81,7 @@ void setup() {
   {
     for(int j = 0; j < BANDS_PER_SIDE; j++)
     {
-      lastLraMsg[i][j] = new LRAMsg();
+      lastLraMsg[i][j] = new LRAMsg(6);
       segQuats[i][j] = new Quaternion(1, 0, 0, 0);
       initialSegQuats[i][j] = new Quaternion(1, 0, 0, 0);
       gotInitialVals[i][j] = false;
@@ -239,7 +239,7 @@ static class Buffer {
       print("SOP error\n");
       return false;
     }
-    if(buf[1] == QUAT_MSG)
+    if(buf[1] == GUI_QUAT_MSG)
     {
       int left = buf[2];
       int upper = buf[3];
@@ -258,6 +258,7 @@ static class Buffer {
         {
           gotInitialVals[left][upper] = true;
           initialSegQuats[left][upper] = new Quaternion(w, x, y, z);
+          print("hitit\n");
         }
         
         if(gotInitialVals[left][upper])
@@ -277,6 +278,24 @@ static class Buffer {
       //print(Integer.toString(left) + ":" + Integer.toString(upper) + "\n");
       
       //printQuat(segQuats[left][upper]);
+      return true;
+    }
+    else if (buf[1] == GUI_LRA_MSG)
+    {
+      int left = buf[2];
+      int upper = buf[3];
+      int isSpin = buf[4];
+
+      if (isSpin != 0) {
+        // TODO: handle spin
+        return true;
+      }
+
+      int numLRAs = 6;
+      if (upper == 1) {
+        numLRAs = 8;
+      }
+      lastLraMsg[left][upper] = LRAMsg.fromBytes(buf, numLRAs);
       return true;
     }
     
@@ -325,7 +344,7 @@ void draw() {
 
   text(packets, 40, 40);
 
-  camera(0.0, -300.0, -40.0,
+  camera(0.0, -500.0, -60.0,
           0, 0, 0,
           0, 0, 1);
 
@@ -333,11 +352,11 @@ void draw() {
   directionalLight(255, 255, 255, -1, 0, 0);
 
   stroke(255, 0, 0);
-  line(0, 0, 0, 100, 0, 0);  // red x
+  line(0, 0, 0, 50, 0, 0);  // red x
   stroke(0, 0, 255);
-  line(0, 0, 0, 0, 100, 0);  // blue y
+  line(0, 0, 0, 0, 50, 0);  // blue y
   stroke(0, 255, 0);
-  line(0, 0, 0, 0, 0, -100); // green z
+  line(0, 0, 0, 0, 0, -50); // green z
 
   stroke(255, 0, 255);
   
@@ -346,33 +365,68 @@ void draw() {
   //line(450, 0, 450, 540);
   //noStroke();
 
-  //if (recording) {
-  //  fill(255, 0, 0);
-  //  ellipse(490, 20, 10, 10);
-  //  text("Recording", 520, 25);
-  //} else if (exercising) {
-  //  fill(0, 255, 0);
-  //  ellipse(490, 20, 10, 10);
-  //  text("Exercising", 520, 25);
-  //}
-
-  //fill(0);
-  //stroke(255);
-  //strokeWeight(3);
-  //ellipse(3.0*width/4.0, height/2.0, 150, 150);
-  //noStroke();
-
-  //for (int i = 0; i < 8; i++) {
-  //  fill(2*lastLraMsg[0][0].intensities[i]);
-  //  ellipse(3.0*width/4.0 + 75*cos(i*3.1416/4), height/2.0 + 75*sin(i*3.1416/4), 20, 20);
-  //}
+  pushMatrix();
+  rotateY((float)Math.PI/2);
+  rotateX((float)Math.PI/2);
+  rotateZ((float)Math.PI/2);
   
+  int xCoord = 200;
+  int yCoord = -100;
+  if (recording) {
+    stroke(255, 0, 0);
+    fill(255, 0, 0);
+    ellipse(xCoord, yCoord, 10, 10);
+    text("Recording", xCoord, yCoord+20);
+  } else if (exercising) {
+    stroke(0, 255, 0);
+    fill(0, 255, 0);
+    ellipse(xCoord, yCoord, 10, 10);
+    text("Exercising", xCoord, yCoord+20);
+  }
+
+  if (lastLraMsg[0][0] != null) {
+    int numLRAs = lastLraMsg[0][0].numLRAs;
+    fill(0);
+    stroke(255);
+    strokeWeight(3);
+    ellipse(xCoord - 350, yCoord+200, 150, 150);
+    noStroke();
+  
+    for (int i = 0; i < numLRAs; i++) {
+      float angle = 2*PI/numLRAs;
+      fill(2*lastLraMsg[0][0].intensities[i]);
+      ellipse(xCoord - 350 + 75*cos(i*angle), yCoord+200 + 75*sin(i*angle), 20, 20);
+    }
+    fill(255);
+    textSize(20);
+    text("Shin", xCoord-367, yCoord+205);
+  }
+  if (lastLraMsg[0][1] != null) {
+    int numLRAs = lastLraMsg[0][1].numLRAs;
+    fill(0);
+    stroke(255);
+    strokeWeight(3);
+    ellipse(xCoord, yCoord+200, 150, 150);
+    noStroke();
+  
+    for (int i = 0; i < numLRAs; i++) {
+      float angle = 2*PI/numLRAs;
+      fill(2*lastLraMsg[0][1].intensities[i]);
+      ellipse(xCoord + 75*cos(i*angle), yCoord+200 + 75*sin(i*angle), 20, 20);
+    }
+    fill(255);
+    textSize(20);
+    text("Thigh", xCoord-25, yCoord+205);
+    
+  }
+  
+  popMatrix();
   //foot.draw();
   //translate(0, footLength/2, 0);
   
   if(gotInitialVals[0][0] && gotInitialVals[0][1])
   {
-
+    stroke(255);
     PVector rFoot_LowLeg = new PVector(lowerLegLength, 0, 0);
     PVector rKnee_UpperLeg = new PVector(upperLegLength, 0, 0);
     
@@ -381,6 +435,12 @@ void draw() {
     
     rFoot_LowLeg = lowerQuat.rotateVec(rFoot_LowLeg);
     rKnee_UpperLeg = upperQuat.rotateVec(rKnee_UpperLeg);
+    
+    if(rFoot_LowLeg.x * rKnee_UpperLeg.x > lowerLegLength * upperLegLength / 10)
+    {
+      rotQt = new Quaternion((float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2)).mult(rotQt);
+      print("ASDF");
+    }
     
     line(0, 0, 0,
         rFoot_LowLeg.x, rFoot_LowLeg.y, -rFoot_LowLeg.z);
