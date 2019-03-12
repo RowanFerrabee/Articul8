@@ -57,6 +57,9 @@ static Quaternion[][] initialSegQuats;
 static boolean[][] gotInitialVals;
 
 Quaternion to_global = new Quaternion(0, 1, 0, 0);
+static Quaternion rotQs;
+static Quaternion rotQt;
+
 
 void setup() {
   size(900, 540, P3D);
@@ -215,6 +218,20 @@ static class Buffer {
     return;
   }
   
+  static Quaternion turnToX(PVector v)
+  {
+    double th = Math.atan2(v.y,v.x);
+
+    //if(th > Math.PI / 2)
+    //    th = th - Math.PI;
+
+    //if(th < -Math.PI / 2)
+    //    th = th + Math.PI;
+  
+    Quaternion q = new Quaternion((float)Math.cos(th/2), 0.0, 0.0, (float)Math.sin(th/2));
+    return q;  
+  }
+  
   static boolean processMsg(byte[] buf)
   {
     if(buf[0] != SOP)
@@ -234,8 +251,27 @@ static class Buffer {
       float z = ByteBuffer.wrap(buf, offset + 12, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
       
       if (gotInitialVals[left][upper] == false) {
-        gotInitialVals[left][upper] = true;
-        initialSegQuats[left][upper] = new Quaternion(w, x, y, z);
+        
+        if(upper == 1 && gotInitialVals[left][0] == false)
+        {}
+        else
+        {
+          gotInitialVals[left][upper] = true;
+          initialSegQuats[left][upper] = new Quaternion(w, x, y, z);
+        }
+        
+        if(gotInitialVals[left][upper])
+        {
+          PVector v = new PVector(1, 0, 0);
+          if(upper == 0)
+            rotQs = turnToX(initialSegQuats[left][0].rotateVec(v));
+          else
+          {
+            v = initialSegQuats[left][1].rotateVec(v);
+            rotQt = turnToX(rotQs.rotateVec(v));
+            //rotQt = new Quaternion( (float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2) ).mult(rotQt);
+          }
+        }
       }
       segQuats[left][upper] = new Quaternion(w, x, y, z);
       //print(Integer.toString(left) + ":" + Integer.toString(upper) + "\n");
@@ -289,9 +325,9 @@ void draw() {
 
   text(packets, 40, 40);
 
-  camera(-200.0, 0.0, 0.0,
+  camera(0.0, -300.0, -40.0,
           0, 0, 0,
-          0, 0, -1);
+          0, 0, 1);
 
   lights();
   directionalLight(255, 255, 255, -1, 0, 0);
@@ -301,7 +337,7 @@ void draw() {
   stroke(0, 0, 255);
   line(0, 0, 0, 0, 100, 0);  // blue y
   stroke(0, 255, 0);
-  line(0, 0, 0, 0, 0, 100); // green z
+  line(0, 0, 0, 0, 0, -100); // green z
 
   stroke(255, 0, 255);
   
@@ -334,33 +370,28 @@ void draw() {
   //foot.draw();
   //translate(0, footLength/2, 0);
   
-  //Quaternion lowerOff = new Quaternion((int)Math.cos(Math.PI/2), 1, 0, 0);
-  Quaternion lowerQuat = initialSegQuats[0][0].mult(segQuats[0][0].getInverse());
-  
-            //localQuatDiff = [globalQuatDiff[0]] + quat.conj().rotate(globalQuatDiff[1:])
-  //Quaternion lowerQuat = segQuats[0][0].mult(lowerOff);
-  
-  //Quaternion upperOff = new Quaternion((float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2));
-  //Quaternion upperOff = new Quaternion(1, 0, 0, 0);
-  //upperOff = upperOff.mult(new Quaternion((int)Math.cos(Math.PI/2), 0, 0, 1));
-  
-  //Quaternion upperQuat = segQuats[0][1];
-  Quaternion upperQuat = initialSegQuats[0][1].mult(segQuats[0][1].getInverse());
+  if(gotInitialVals[0][0] && gotInitialVals[0][1])
+  {
 
+    PVector rFoot_LowLeg = new PVector(lowerLegLength, 0, 0);
+    PVector rKnee_UpperLeg = new PVector(upperLegLength, 0, 0);
+    
+    Quaternion lowerQuat = rotQs.mult(segQuats[0][0]);
+    Quaternion upperQuat = rotQt.mult(rotQs.mult(segQuats[0][1]));
+    
+    rFoot_LowLeg = lowerQuat.rotateVec(rFoot_LowLeg);
+    rKnee_UpperLeg = upperQuat.rotateVec(rKnee_UpperLeg);
+    
+    line(0, 0, 0,
+        rFoot_LowLeg.x, rFoot_LowLeg.y, -rFoot_LowLeg.z);
+        
+    line(rFoot_LowLeg.x, rFoot_LowLeg.y, -rFoot_LowLeg.z,
+         rFoot_LowLeg.x + rKnee_UpperLeg.x, rFoot_LowLeg.y + rKnee_UpperLeg.y, -rFoot_LowLeg.z  - rKnee_UpperLeg.z
+    );
+    
+  }
   
-  //lowerQuat = new Quaternion(1, 0, 0, 0);
-  PVector rFoot_LowLeg = new PVector(0, 0, lowerLegLength);
-  PVector rKnee_UpperLeg = new PVector(0, 0, upperLegLength);
   
-  rFoot_LowLeg = lowerQuat.rotateVec(rFoot_LowLeg);
-  rKnee_UpperLeg = upperQuat.rotateVec(rKnee_UpperLeg);
-  
-  line(0, 0, 0,
-      rFoot_LowLeg.x, rFoot_LowLeg.y, rFoot_LowLeg.z);
-      
-  line(rFoot_LowLeg.x, rFoot_LowLeg.y, rFoot_LowLeg.z,
-       rFoot_LowLeg.x + rKnee_UpperLeg.x, rFoot_LowLeg.y + rKnee_UpperLeg.y, rFoot_LowLeg.z  + rKnee_UpperLeg.z
-  );
       
   
   //print(Float.toString(rFoot_LowLeg.x) + " " + Float.toString(rFoot_LowLeg.y) + " " + Float.toString(rFoot_LowLeg.z) + "\n");
