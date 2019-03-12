@@ -8,24 +8,24 @@
 Packet offsetReport;
 
 void calibrateDevice(uchar calibration_type) {
-	if (calibration_type == CALIBRATE_ACCEL)
-	{
-		int16_t xAccel, yAccel, zAccel;
-		mpu.getAcceleration(&xAccel, &yAccel, &zAccel);
+	mpu.setXAccelOffset(0);
+	mpu.setYAccelOffset(0);
+	mpu.setZAccelOffset(0);
+	delay(5);
 
-		mpu.setXAccelOffset(mpu.getXAccelOffset() - xAccel/16);
-		mpu.setYAccelOffset(mpu.getYAccelOffset() - yAccel/16);
-		mpu.setZAccelOffset(mpu.getZAccelOffset() - zAccel/16);
-	}
-	else if (calibration_type == CALIBRATE_GYRO)
-	{
-		int16_t xGyro, yGyro, zGyro;
-		mpu.getRotation(&xGyro, &yGyro, &zGyro);
+	int16_t xAccel, yAccel, zAccel;
+	mpu.getAcceleration(&xAccel, &yAccel, &zAccel);
 
-		mpu.setXGyroOffset(mpu.getXGyroOffset() - xGyro/16);
-		mpu.setYGyroOffset(mpu.getXGyroOffset() - yGyro/16);
-		mpu.setZGyroOffset(mpu.getXGyroOffset() - zGyro/16);
-	}
+	mpu.setXAccelOffset(-xAccel/8);
+	mpu.setYAccelOffset(-yAccel/8);
+	mpu.setZAccelOffset((-zAccel+16384)/8);
+
+	// int16_t xGyro, yGyro, zGyro;
+	// mpu.getRotation(&xGyro, &yGyro, &zGyro);
+
+	// mpu.setXGyroOffset(mpu.getXGyroOffset() - xGyro/16);
+	// mpu.setYGyroOffset(mpu.getXGyroOffset() - yGyro/16);
+	// mpu.setZGyroOffset(mpu.getXGyroOffset() - zGyro/16);
 }
 
 uchar* reportOffsets() {

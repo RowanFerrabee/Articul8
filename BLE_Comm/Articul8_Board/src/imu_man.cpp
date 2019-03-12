@@ -41,7 +41,7 @@ void dmpDataReady()
     mpuInterrupt = true;
 }
 
-bool initDMP(int16_t xGyro, int16_t yGyro, int16_t zGyro, int16_t xAccel, int16_t yAccel, int16_t zAccel)
+bool initDMP()
 {
   devStatus = mpu.dmpInitialize();
 
@@ -50,12 +50,6 @@ bool initDMP(int16_t xGyro, int16_t yGyro, int16_t zGyro, int16_t xAccel, int16_
   // mpu.setYGyroOffset(76);
   // mpu.setZGyroOffset(-85);
   // mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
-  mpu.setXGyroOffset(xGyro);
-  mpu.setYGyroOffset(yGyro);
-  mpu.setZGyroOffset(zGyro);
-  mpu.setXAccelOffset(xAccel);
-  mpu.setYAccelOffset(yAccel);
-  mpu.setZAccelOffset(zAccel);
 
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) {

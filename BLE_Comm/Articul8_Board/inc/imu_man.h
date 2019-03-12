@@ -42,7 +42,7 @@ extern float euler[3];         // [psi, theta, phi]    Euler angle container
 extern float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 // -- Function Declarations --
-bool initDMP(int xGyro, int yGyro, int zGyro, int xAccel, int yAccel, int zAccel);
+bool initDMP();
 bool checkForIMUPacket(void* dst, int* len);
 
 // Interrupt Detection Routine

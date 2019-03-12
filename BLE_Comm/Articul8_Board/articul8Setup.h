@@ -89,16 +89,7 @@ void initMPU()
 
   bool did_init = false;
 
-  int16_t accelResolution = 8;
-  int16_t xAccel = ACCEL_OFFSET_X / accelResolution;
-  int16_t yAccel = ACCEL_OFFSET_Y / accelResolution;
-  int16_t zAccel = ACCEL_OFFSET_Z / accelResolution;
-
-  int16_t gyroResolution = 8;
-  int16_t xGyro, yGyro, zGyro;
-  xGyro = yGyro = zGyro = 0;
-
-  did_init = initDMP(xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
+  did_init = initDMP();
   if(!did_init) { Serial.println("DMP Init failed"); while(1); }
 
   dmpReady = true;  

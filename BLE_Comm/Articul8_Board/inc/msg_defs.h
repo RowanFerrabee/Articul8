@@ -10,17 +10,17 @@ typedef unsigned char uchar;
 
 // #if (BOARD == BOARD_3)
 
-    // #define NUM_LRAS 8
-    // #define ACCEL_OFFSET_X -960
-    // #define ACCEL_OFFSET_Y 2400
-    // #define ACCEL_OFFSET_Z 6400
+    #define NUM_LRAS 6
+    // #define ACCEL_OFFSET_X 0
+    // #define ACCEL_OFFSET_Y 0
+    // #define ACCEL_OFFSET_Z 0
 
 // #elif (BOARD == BOARD_1)
 
-    #define NUM_LRAS 6
-    #define ACCEL_OFFSET_X -27000
-    #define ACCEL_OFFSET_Y 1600
-    #define ACCEL_OFFSET_Z 9700
+    // #define NUM_LRAS 6
+    // #define ACCEL_OFFSET_X -27000
+    // #define ACCEL_OFFSET_Y 1600
+    // #define ACCEL_OFFSET_Z 9700
 
 // #endif
 
