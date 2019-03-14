@@ -3,36 +3,18 @@ import processing.serial.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import shapes3d.*;
-import shapes3d.animation.*;
-import shapes3d.utils.*;
-
-Ellipsoid upperLeg;
 int upperLegLength = 55;
 int upperLegRadius = 15;
 int lowerLegLength = 40;
 int lowerLegRadius = 10;
-Ellipsoid lowerLeg;
-Box foot;
 int footLength = 50;
 
-void setupLeg()
-{
-
-  upperLeg = new Ellipsoid(this, 20, 20);
-  upperLeg.setRadius(upperLegLength, upperLegRadius, upperLegRadius);
-  upperLeg.fill(#19BF38);
-
-  lowerLeg = new Ellipsoid(this, 20, 20);
-  lowerLeg.setRadius(lowerLegLength, lowerLegRadius, lowerLegRadius);
-  lowerLeg.fill(#19BF38);  
-  
-  foot = new Box(this, footLength/5, footLength, footLength/5.0);
-  
-}
-
-PImage textures[];
-String texNames[] = {"front.png", "back.png", "bottom.png", "top.png", "right.png", "left.png"};
+int bandXCoord = 675;
+int bandYCoord = 0;
+int textXCoord = 625;
+int textYCoord = 70;
+int plotXOffset = 140;
+int plotYOffset = 150;
 
 Client tcpClient;
 int socketPort = 5432;
@@ -56,19 +38,19 @@ static Quaternion[][] segQuats;
 static Quaternion[][] initialSegQuats;
 static boolean[][] gotInitialVals;
 static float[][] spinFreqs;
+static boolean[] drawEllipse;
+static float[][] lastDrawnIntensities;
 
 Quaternion to_global = new Quaternion(0, 1, 0, 0);
 static Quaternion rotQs;
 static Quaternion rotQt;
 
+boolean drawRecording = false;
+boolean drawExercising = false;
 
 void setup() {
-  size(900, 540, P3D);
-  textures = new PImage[6];
-  for (int i = 0; i < 6; i++) {
-    textures[i] = loadImage(texNames[i]);
-  }
-  textureMode(NORMAL);
+  size(900, 540);
+
   fill(255); //<>//
   stroke(color(44, 48, 32));
 
@@ -78,20 +60,39 @@ void setup() {
   initialSegQuats = new Quaternion[N_SIDES][BANDS_PER_SIDE];
   gotInitialVals = new boolean[N_SIDES][BANDS_PER_SIDE];
   spinFreqs = new float[N_SIDES][BANDS_PER_SIDE];
+  drawEllipse = new boolean[BANDS_PER_SIDE];
+  lastDrawnIntensities = new float[BANDS_PER_SIDE][8];
   
   for(int i = 0; i < N_SIDES; i++)
   {
+    lastLraMsg[i][0] = new LRAMsg(6);
+    lastLraMsg[i][1] = new LRAMsg(8);
     for(int j = 0; j < BANDS_PER_SIDE; j++)
     {
-      lastLraMsg[i][j] = new LRAMsg(6);
       segQuats[i][j] = new Quaternion(1, 0, 0, 0);
       initialSegQuats[i][j] = new Quaternion(1, 0, 0, 0);
       gotInitialVals[i][j] = false;
       spinFreqs[i][j] = 0;
+      drawEllipse[j] = true;
+      for (int k = 0; k < 8; k++) {
+        lastDrawnIntensities[j][k] = 0;
+      }
     }
   }
+
+  background(0);
+
+  fill(255);
+  textSize(20);
+  text("Thigh", bandXCoord-25, bandYCoord+405);
+
+  fill(255);
+  textSize(20);
+  text("Shin", bandXCoord-23, bandYCoord+205);
   
-  setupLeg();
+  text("Top", plotXOffset+100, plotYOffset-40);
+  text("Side", plotXOffset+100, plotYOffset-40+170);
+  text("Front", plotXOffset+100, plotYOffset-40+340);
 }
 
 static void printQuat(Quaternion q)
@@ -294,7 +295,7 @@ boolean readPacket() {
 
   Buffer.tryWrite(tcpClient);
 
-  if(tcpClient.available() > 10 * PACKET_SIZE)
+  if(tcpClient.available() > 20 * PACKET_SIZE)
   {
     print("Clearing\n");
     tcpClient.clear();
@@ -303,97 +304,122 @@ boolean readPacket() {
   return Buffer.get();
 }
 
+
+
 void draw() {
   while(readPacket())
     packets++;
     
-  background(0);
+  // BIG DICK ENERGY COMMENT
+  //background(0);
 
-  textSize(14);
-  text(packets, 40, 40);
-
-  stroke(255, 0, 255);
+  //textSize(14);
+  //text(packets, 40, 40);
   
   strokeWeight(3);
   stroke(255);
   line(450, 0, 450, 540);
-  noStroke();
-  
-  int textXCoord = 630;
-  int textYCoord = 70;
-  if (recording) {
-    stroke(255, 0, 0);
-    fill(255, 0, 0);
-    ellipse(textXCoord, textYCoord, 10, 10);
-    text("Recording", textXCoord+15, textYCoord+6);
-  } else if (exercising) {
-    stroke(0, 255, 0);
-    fill(0, 255, 0);
-    ellipse(textXCoord, textYCoord, 10, 10);
-    text("Exercising", textXCoord+15, textYCoord+6);
+
+  if (drawRecording) {
+    if (recording) {
+      stroke(255, 0, 0);
+      fill(255, 0, 0);
+      ellipse(textXCoord, textYCoord, 10, 10);
+      text("Recording", textXCoord+15, textYCoord+6);
+    } else {
+      noStroke();
+      fill(0);
+      rect(textXCoord-100, textYCoord-20, textXCoord+100, textYCoord+20);
+    }
+    drawRecording = false;
+  }
+
+  if (drawExercising) {
+    if (exercising) {
+      stroke(0, 255, 0);
+      fill(0, 255, 0);
+      ellipse(textXCoord, textYCoord, 10, 10);
+      text("Exercising", textXCoord+15, textYCoord+6);
+    } else {
+      noStroke();
+      fill(0);
+      rect(textXCoord-100, textYCoord-20, textXCoord+100, textYCoord+20);
+    }
+    drawExercising = false;
   }
   
   while(readPacket())
     packets++;
 
-  int xCoord = 675;
-  int yCoord = 0;
   if (lastLraMsg[0][0] != null) {
-    int numLRAs = lastLraMsg[0][0].numLRAs;
-    fill(0);
     stroke(255);
     strokeWeight(3);
-    ellipse(xCoord, yCoord+200, 150, 150);
-    noStroke();
-  
-    for (int i = 0; i < numLRAs; i++) {
-      float angle = 2*PI/numLRAs;
-      fill(2*lastLraMsg[0][0].intensities[i]);
-      ellipse(xCoord + 75*cos(i*angle), yCoord+200 + 75*sin(i*angle), 20, 20);
-    }
-    
-    noFill();
-    stroke(255);
+
     if (spinFreqs[0][0] < -0.01) {
-      arc(xCoord, yCoord+200, 170, 170, 0, HALF_PI);
-      line(xCoord, yCoord+200+170, 10+xCoord, 10+yCoord+200+85);
+      fill(0);
+      arc(bandXCoord, bandYCoord+200, 170, 170, 0, HALF_PI);
+      line(bandXCoord, bandYCoord+200+170, 10+bandXCoord, 10+bandYCoord+200+85);
+    } else if (spinFreqs[0][0] > 0.01) {
+      fill(0);
+      arc(bandXCoord, bandYCoord+200, 170, 170, -HALF_PI, 0);
+      line(bandXCoord, bandYCoord+200-170, 10+bandXCoord, 10+bandYCoord+200-85);
+    } else {
+      noStroke();
+      int numLRAs = lastLraMsg[0][0].numLRAs;
+      for (int i = 0; i < numLRAs; i++) {
+        if (lastDrawnIntensities[0][i] != lastLraMsg[0][0].intensities[i]) {
+          drawEllipse[0] = true;
+          float angle = 2*PI/numLRAs;
+          lastDrawnIntensities[0][i] = lastLraMsg[0][0].intensities[i];
+          fill(2*lastLraMsg[0][0].intensities[i]);
+          ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+200 + 75*sin(i*angle), 20, 20);
+        }
+      }
+      if (drawEllipse[0]) {
+        stroke(255);
+        strokeWeight(3);
+        noFill();
+        ellipse(bandXCoord, bandYCoord+200, 150, 150);
+        drawEllipse[0] = false;
+      }
     }
-    if (spinFreqs[0][0] > 0.01) {
-      arc(xCoord, yCoord+200, 170, 170, -HALF_PI, 0);
-      line(xCoord, yCoord+200-170, 10+xCoord, 10+yCoord+200-85);
-    }
-    fill(255);
-    textSize(20);
-    text("Shin", xCoord-23, yCoord+205);
   }
+
+  while(readPacket())
+    packets++;
+  
   if (lastLraMsg[0][1] != null) {
-    int numLRAs = lastLraMsg[0][1].numLRAs;
-    fill(0);
     stroke(255);
     strokeWeight(3);
-    ellipse(xCoord, yCoord+400, 150, 150);
-    noStroke();
-  
-    for (int i = 0; i < numLRAs; i++) {
-      float angle = 2*PI/numLRAs;
-      fill(2*lastLraMsg[0][1].intensities[i]);
-      ellipse(xCoord + 75*cos(i*angle), yCoord+400 + 75*sin(i*angle), 20, 20);
-    }
-    
-    noFill();
-    stroke(255);
+
     if (spinFreqs[0][1] < -0.01) {
-      arc(xCoord, yCoord+400, 170, 170, 0, HALF_PI);
-      line(xCoord, yCoord+400+170, 10+xCoord, 10+yCoord+400+85);
+      fill(0);
+      arc(bandXCoord, bandYCoord+400, 170, 170, 0, HALF_PI);
+      line(bandXCoord, bandYCoord+400+170, 10+bandXCoord, 10+bandYCoord+400+85);
+    } else if (spinFreqs[0][1] > 0.01) {
+      fill(0);
+      arc(bandXCoord, bandYCoord+400, 170, 170, -HALF_PI, 0);
+      line(bandXCoord, bandYCoord+400-170, 10+bandXCoord, 10+bandYCoord+400-85);
+    } else {
+      noStroke();
+      int numLRAs = lastLraMsg[0][1].numLRAs;
+      for (int i = 0; i < numLRAs; i++) {
+        if (lastDrawnIntensities[1][i] != lastLraMsg[0][1].intensities[i]) {
+          drawEllipse[1] = true;
+          float angle = 2*PI/numLRAs;
+          lastDrawnIntensities[1][i] = lastLraMsg[0][0].intensities[i];
+          fill(2*lastLraMsg[0][0].intensities[i]);
+          ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+200 + 75*sin(i*angle), 20, 20);
+        }
+      }
+      if (drawEllipse[1]) {
+        stroke(255);
+        strokeWeight(3);
+        noFill();
+        ellipse(bandXCoord, bandYCoord+400, 150, 150);
+        drawEllipse[1] = false;
+      }
     }
-    if (spinFreqs[0][1] > 0.01) {
-      arc(xCoord, yCoord+400, 170, 170, -HALF_PI, 0);
-      line(xCoord, yCoord+400-170, 10+xCoord, 10+yCoord+400-85);
-    }
-    fill(255);
-    textSize(20);
-    text("Thigh", xCoord-25, yCoord+405);
-    
   }
 
   while(readPacket())
@@ -422,12 +448,8 @@ void draw() {
       print("Switching view orientation");
     }
     
-    int plotXOffset = 140;
-    int plotYOffset = 150;
-    
     // XY Plot
     stroke(255);
-    text("Top", plotXOffset+100, plotYOffset-40);
     text(" x", plotXOffset+70, plotYOffset);
     text(" y", plotXOffset, plotYOffset-70);
     stroke(255,0,0);
@@ -439,37 +461,39 @@ void draw() {
     line(-rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.y + plotYOffset,
          -rFoot_LowLeg.x + plotXOffset + -rKnee_UpperLeg.x, -rFoot_LowLeg.y + plotYOffset + -rKnee_UpperLeg.y
     );
+    
+
+    while(readPacket())
+      packets++;
 
     // XZ Plot
-    plotYOffset += 170;
+    //plotYOffset += 170;
     stroke(255);
-    text("Side", plotXOffset+100, plotYOffset-40);
-    text(" x", plotXOffset+70, plotYOffset);
-    text(" z", plotXOffset, plotYOffset-70);
+    text(" x", plotXOffset+70, plotYOffset+170);
+    text(" z", plotXOffset, plotYOffset-70+170);
     stroke(255,0,0);
-    line(plotXOffset, plotYOffset, plotXOffset+70, plotYOffset);
+    line(plotXOffset, plotYOffset+170, plotXOffset+70, plotYOffset+170);
     stroke(0,255,0);
-    line(plotXOffset, plotYOffset, plotXOffset, plotYOffset-70);
+    line(plotXOffset, plotYOffset+170, plotXOffset, plotYOffset-70+170);
     stroke(255,0,255);
-    line(plotXOffset, plotYOffset, -rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.z + plotYOffset);
-    line(-rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.z + plotYOffset,
-         -rFoot_LowLeg.x + plotXOffset + -rKnee_UpperLeg.x, -rFoot_LowLeg.z + plotYOffset + -rKnee_UpperLeg.z
+    line(plotXOffset, plotYOffset+170, -rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.z + plotYOffset+170);
+    line(-rFoot_LowLeg.x + plotXOffset, -rFoot_LowLeg.z + plotYOffset+170,
+         -rFoot_LowLeg.x + plotXOffset + -rKnee_UpperLeg.x, -rFoot_LowLeg.z + plotYOffset+170 + -rKnee_UpperLeg.z
     );
     
     // YZ Plot
-    plotYOffset += 170;
+    //plotYOffset += 170;
     stroke(255);
-    text("Front", plotXOffset+100, plotYOffset-40);
-    text(" y", plotXOffset+70, plotYOffset);
-    text(" z", plotXOffset, plotYOffset-70);
+    text(" y", plotXOffset+70, plotYOffset+340);
+    text(" z", plotXOffset, plotYOffset-70+340);
     stroke(0,0,255);
-    line(plotXOffset, plotYOffset, plotXOffset+70, plotYOffset);
+    line(plotXOffset, plotYOffset+340, plotXOffset+70, plotYOffset+340);
     stroke(0,255,0);
-    line(plotXOffset, plotYOffset, plotXOffset, plotYOffset-70);
+    line(plotXOffset, plotYOffset+340, plotXOffset, plotYOffset-70+340);
     stroke(255,0,255);
-    line(plotXOffset, plotYOffset, -rFoot_LowLeg.y + plotXOffset, -rFoot_LowLeg.z + plotYOffset);
-    line(-rFoot_LowLeg.y + plotXOffset, -rFoot_LowLeg.z + plotYOffset,
-         -rFoot_LowLeg.y + plotXOffset + -rKnee_UpperLeg.y, -rFoot_LowLeg.z + plotYOffset + -rKnee_UpperLeg.z
+    line(plotXOffset, plotYOffset+340, -rFoot_LowLeg.y + plotXOffset, -rFoot_LowLeg.z + plotYOffset+340);
+    line(-rFoot_LowLeg.y + plotXOffset, -rFoot_LowLeg.z + plotYOffset+340,
+         -rFoot_LowLeg.y + plotXOffset + -rKnee_UpperLeg.y, -rFoot_LowLeg.z + plotYOffset+340 + -rKnee_UpperLeg.z
     );
   }
 }
@@ -484,9 +508,11 @@ void keyPressed() {
     if (!recording) {
       guiControlMsg[POS_DATA+1] = byte(START_RECORDING);
       recording = true;
+      drawRecording = true;
     } else {
       guiControlMsg[POS_DATA+1] = byte(STOP_RECORDING);
       recording = false;
+      drawRecording = true;
     }
     tcpClient.write(guiControlMsg);
   }
@@ -496,9 +522,11 @@ void keyPressed() {
     if (!exercising) {
       guiControlMsg[POS_DATA+1] = byte(START_EXERCISE);
       exercising = true;
+      drawExercising = true;
     } else {
       guiControlMsg[POS_DATA+1] = byte(STOP_EXERCISE);
       exercising = false;
+      drawExercising = true;
     }
     tcpClient.write(guiControlMsg);
   }
