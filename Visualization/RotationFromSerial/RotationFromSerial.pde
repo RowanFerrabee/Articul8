@@ -183,6 +183,7 @@ static class Buffer {
     return q;  
   }
   
+  static PVector unitX = new PVector(1, 0, 0);
   static boolean processMsg(byte[] buf)
   {
     if(buf[0] != SOP)
@@ -201,29 +202,44 @@ static class Buffer {
       float y = ByteBuffer.wrap(buf, offset + 8, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
       float z = ByteBuffer.wrap(buf, offset + 12, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
       
-      if (gotInitialVals[left][upper] == false) {
-        
-        if(upper == 1 && gotInitialVals[left][0] == false)
-        {}
-        else
-        {
-          gotInitialVals[left][upper] = true;
-          initialSegQuats[left][upper] = new Quaternion(w, x, y, z);
-        }
-        
-        if(gotInitialVals[left][upper])
-        {
-          PVector v = new PVector(1, 0, 0);
-          if(upper == 0)
-            rotQs = turnToX(initialSegQuats[left][0].rotateVec(v));
-          else
-          {
-            v = initialSegQuats[left][1].rotateVec(v);
-            rotQt = turnToX(rotQs.rotateVec(v));
-            //rotQt = new Quaternion( (float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2) ).mult(rotQt);
-          }
-        }
+      Quaternion q = new Quaternion(w, x, y, z);
+      if(upper == 0)
+      {
+        rotQs = turnToX(q.rotateVec(unitX));
+        gotInitialVals[left][upper] = true;
       }
+      
+      //else
+      //{
+      //  if(gotInitialVals[left][0])
+      //  {
+              
+      //  }
+      //}
+      
+      //if (gotInitialVals[left][upper] == false) {
+        
+      //  if(upper == 1 && gotInitialVals[left][0] == false)
+      //  {}
+      //  else
+      //  {
+      //    gotInitialVals[left][upper] = true;
+      //    initialSegQuats[left][upper] = new Quaternion(w, x, y, z);
+      //  }
+        
+      //  if(gotInitialVals[left][upper])
+      //  {
+      //    PVector v = new PVector(1, 0, 0);
+      //    if(upper == 0)
+      //      rotQs = turnToX(initialSegQuats[left][0].rotateVec(v));
+      //    else
+      //    {
+      //      v = initialSegQuats[left][1].rotateVec(v);
+      //      rotQt = turnToX(rotQs.rotateVec(v));
+      //      //rotQt = new Quaternion( (float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2) ).mult(rotQt);
+      //    }
+      //  }
+      //}
       segQuats[left][upper] = new Quaternion(w, x, y, z);
 
       return true;
@@ -383,14 +399,19 @@ void draw() {
   while(readPacket())
     packets++;
 
-  if(gotInitialVals[0][0] && gotInitialVals[0][1])
+  //if(gotInitialVals[0][0] && gotInitialVals[0][1])
+  if(gotInitialVals[0][0])
   {
     stroke(255);
     PVector rFoot_LowLeg = new PVector(lowerLegLength, 0, 0);
     PVector rKnee_UpperLeg = new PVector(upperLegLength, 0, 0);
     
+    //Quaternion lowerQuat = segQuats[0][0];
+    //Quaternion upperQuat = segQuats[0][1];
+    
     Quaternion lowerQuat = rotQs.mult(segQuats[0][0]);
-    Quaternion upperQuat = rotQt.mult(rotQs.mult(segQuats[0][1]));
+    //Quaternion upperQuat = rotQt.mult(rotQs.mult(segQuats[0][1]));
+    Quaternion upperQuat = rotQs.mult(segQuats[0][1]);
     
     rFoot_LowLeg = lowerQuat.rotateVec(rFoot_LowLeg);
     rKnee_UpperLeg = upperQuat.rotateVec(rKnee_UpperLeg);
