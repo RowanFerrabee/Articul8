@@ -1,4 +1,4 @@
-import processing.net.*;  //<>//
+import processing.net.*;  //<>// //<>// //<>//
 import processing.serial.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -39,19 +39,20 @@ static Quaternion[][] initialSegQuats;
 static boolean[][] gotInitialVals;
 static float[][] spinFreqs;
 static boolean[] drawEllipse;
+static boolean[] isSpinning;
 static float[][] lastDrawnIntensities;
 
 Quaternion to_global = new Quaternion(0, 1, 0, 0);
 static Quaternion rotQs;
-static Quaternion rotQt;
+static Quaternion rotQt = new Quaternion(1, 0, 0, 0);
 
 boolean drawRecording = false;
 boolean drawExercising = false;
 
 void setup() {
   size(900, 540);
-
-  fill(255); //<>//
+ //<>//
+  fill(255); //<>// //<>//
   stroke(color(44, 48, 32));
 
   tcpClient = new Client(this, "127.0.0.1", socketPort);
@@ -61,6 +62,7 @@ void setup() {
   gotInitialVals = new boolean[N_SIDES][BANDS_PER_SIDE];
   spinFreqs = new float[N_SIDES][BANDS_PER_SIDE];
   drawEllipse = new boolean[BANDS_PER_SIDE];
+  isSpinning = new boolean[BANDS_PER_SIDE];
   lastDrawnIntensities = new float[BANDS_PER_SIDE][8];
   
   for(int i = 0; i < N_SIDES; i++)
@@ -74,6 +76,7 @@ void setup() {
       gotInitialVals[i][j] = false;
       spinFreqs[i][j] = 0;
       drawEllipse[j] = true;
+      isSpinning[j] = false;
       for (int k = 0; k < 8; k++) {
         lastDrawnIntensities[j][k] = 0;
       }
@@ -90,9 +93,13 @@ void setup() {
   textSize(20);
   text("Shin", bandXCoord-23, bandYCoord+205);
   
-  text("Top", plotXOffset+100, plotYOffset-40);
-  text("Side", plotXOffset+100, plotYOffset-40+170);
-  text("Front", plotXOffset+100, plotYOffset-40+340);
+  text("Top", plotXOffset+160, plotYOffset-40);
+  text("Front", plotXOffset+160, plotYOffset-40+170);
+  text("Side", plotXOffset+160, plotYOffset-40+340);
+  
+  strokeWeight(3);
+  stroke(255);
+  line(450, 0, 450, 540);
 }
 
 static void printQuat(Quaternion q)
@@ -207,9 +214,9 @@ static class Buffer {
       if(upper == 0)
       {
         rotQs = turnToX(q.rotateVec(unitX));
-        gotInitialVals[left][upper] = true;
       }
       
+      gotInitialVals[left][upper] = true;
       //else
       //{
       //  if(gotInitialVals[left][0])
@@ -304,9 +311,11 @@ boolean readPacket() {
   return Buffer.get();
 }
 
-
+int frameNum = 0;
 
 void draw() {
+  frameNum += 1;
+  
   while(readPacket())
     packets++;
     
@@ -318,7 +327,7 @@ void draw() {
   
   strokeWeight(3);
   stroke(255);
-  line(450, 0, 450, 540);
+  //line(450, 0, 450, 540);
 
   if (drawRecording) {
     if (recording) {
@@ -329,12 +338,10 @@ void draw() {
     } else {
       noStroke();
       fill(0);
-      rect(textXCoord-100, textYCoord-20, textXCoord+100, textYCoord+20);
+      rect(textXCoord-100, textYCoord-10, textXCoord+100, textYCoord-6);
     }
     drawRecording = false;
-  }
-
-  if (drawExercising) {
+  } else if (drawExercising) {
     if (exercising) {
       stroke(0, 255, 0);
       fill(0, 255, 0);
@@ -343,7 +350,7 @@ void draw() {
     } else {
       noStroke();
       fill(0);
-      rect(textXCoord-100, textYCoord-20, textXCoord+100, textYCoord+20);
+      rect(textXCoord-100, textYCoord-10, textXCoord+100, textYCoord-6);
     }
     drawExercising = false;
   }
@@ -356,14 +363,29 @@ void draw() {
     strokeWeight(3);
 
     if (spinFreqs[0][0] < -0.01) {
-      fill(0);
+      noFill();
       arc(bandXCoord, bandYCoord+200, 170, 170, 0, HALF_PI);
-      line(bandXCoord, bandYCoord+200+170, 10+bandXCoord, 10+bandYCoord+200+85);
+      isSpinning[0] = true;
+      line(bandXCoord, bandYCoord+200+85, 4+bandXCoord, 4+bandYCoord+200+85);
+      line(bandXCoord, bandYCoord+200+85, 4+bandXCoord, -4+bandYCoord+200+85);
     } else if (spinFreqs[0][0] > 0.01) {
-      fill(0);
+      noFill();
       arc(bandXCoord, bandYCoord+200, 170, 170, -HALF_PI, 0);
-      line(bandXCoord, bandYCoord+200-170, 10+bandXCoord, 10+bandYCoord+200-85);
+      isSpinning[0] = true;
+      line(bandXCoord, bandYCoord+200-85, 4+bandXCoord, 4+bandYCoord+200-85);
+      line(bandXCoord, bandYCoord+200-85, 4+bandXCoord, -4+bandYCoord+200-85);
     } else {
+      if (isSpinning[0] == true) {
+        noFill();
+        stroke(0);
+        strokeWeight(5);
+        arc(bandXCoord, bandYCoord+200, 170, 170, -HALF_PI, HALF_PI);
+        line(bandXCoord, bandYCoord+200-85, 4+bandXCoord, 4+bandYCoord+200-85);
+        line(bandXCoord, bandYCoord+200-85, 4+bandXCoord, -4+bandYCoord+200-85);
+        line(bandXCoord, bandYCoord+200+85, 4+bandXCoord, 4+bandYCoord+200+85);
+        line(bandXCoord, bandYCoord+200+85, 4+bandXCoord, -4+bandYCoord+200+85);
+        isSpinning[0] = false;
+      }
       noStroke();
       int numLRAs = lastLraMsg[0][0].numLRAs;
       for (int i = 0; i < numLRAs; i++) {
@@ -372,7 +394,11 @@ void draw() {
           float angle = 2*PI/numLRAs;
           lastDrawnIntensities[0][i] = lastLraMsg[0][0].intensities[i];
           fill(2*lastLraMsg[0][0].intensities[i]);
-          ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+200 + 75*sin(i*angle), 20, 20);
+          int size = 20;
+          if (lastLraMsg[0][0].intensities[i] < 10) {
+            size = 21;
+          }
+          ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+200 + 75*sin(i*angle), size, size);
         }
       }
       if (drawEllipse[0]) {
@@ -393,23 +419,42 @@ void draw() {
     strokeWeight(3);
 
     if (spinFreqs[0][1] < -0.01) {
-      fill(0);
+      noFill();
       arc(bandXCoord, bandYCoord+400, 170, 170, 0, HALF_PI);
-      line(bandXCoord, bandYCoord+400+170, 10+bandXCoord, 10+bandYCoord+400+85);
+      isSpinning[1] = true;
+      line(bandXCoord, bandYCoord+400+85, 4+bandXCoord, 4+bandYCoord+400+85);
+      line(bandXCoord, bandYCoord+400+85, 4+bandXCoord, -4+bandYCoord+400+85);
     } else if (spinFreqs[0][1] > 0.01) {
-      fill(0);
+      noFill();
       arc(bandXCoord, bandYCoord+400, 170, 170, -HALF_PI, 0);
-      line(bandXCoord, bandYCoord+400-170, 10+bandXCoord, 10+bandYCoord+400-85);
+      isSpinning[1] = true;
+      line(bandXCoord, bandYCoord+400-85, 4+bandXCoord, 4+bandYCoord+400-85);
+      line(bandXCoord, bandYCoord+400-85, 4+bandXCoord, -4+bandYCoord+400-85);
     } else {
+      if (isSpinning[1] == true) {
+        noFill();
+        stroke(0);
+        strokeWeight(5);
+        line(bandXCoord, bandYCoord+400+85, 4+bandXCoord, 4+bandYCoord+400+85);
+        line(bandXCoord, bandYCoord+400+85, 4+bandXCoord, -4+bandYCoord+400+85);
+        line(bandXCoord, bandYCoord+400-85, 4+bandXCoord, 4+bandYCoord+400-85);
+        line(bandXCoord, bandYCoord+400-85, 4+bandXCoord, -4+bandYCoord+400-85);
+        arc(bandXCoord, bandYCoord+400, 170, 170, -HALF_PI, HALF_PI);
+        isSpinning[1] = false;
+      }
       noStroke();
       int numLRAs = lastLraMsg[0][1].numLRAs;
       for (int i = 0; i < numLRAs; i++) {
         if (lastDrawnIntensities[1][i] != lastLraMsg[0][1].intensities[i]) {
           drawEllipse[1] = true;
           float angle = 2*PI/numLRAs;
-          lastDrawnIntensities[1][i] = lastLraMsg[0][0].intensities[i];
-          fill(2*lastLraMsg[0][0].intensities[i]);
-          ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+200 + 75*sin(i*angle), 20, 20);
+          lastDrawnIntensities[1][i] = lastLraMsg[0][1].intensities[i];
+          fill(2*lastLraMsg[0][1].intensities[i]);
+          int size = 20;
+          if (lastLraMsg[0][1].intensities[i] < 10) {
+            size = 21;
+          }
+          ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+400 + 75*sin(i*angle), size, size);
         }
       }
       if (drawEllipse[1]) {
@@ -425,8 +470,7 @@ void draw() {
   while(readPacket())
     packets++;
 
-  //if(gotInitialVals[0][0] && gotInitialVals[0][1])
-  if(gotInitialVals[0][0])
+  if(gotInitialVals[0][0] && gotInitialVals[0][1])
   {
     stroke(255);
     PVector rFoot_LowLeg = new PVector(lowerLegLength, 0, 0);
@@ -442,16 +486,23 @@ void draw() {
     rFoot_LowLeg = lowerQuat.rotateVec(rFoot_LowLeg);
     rKnee_UpperLeg = upperQuat.rotateVec(rKnee_UpperLeg);
     
-    if(rFoot_LowLeg.x * rKnee_UpperLeg.x > lowerLegLength * upperLegLength / 10)
-    {
-      rotQt = new Quaternion((float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2)).mult(rotQt);
-      print("Switching view orientation");
-    }
+    //if(rFoot_LowLeg.x * rKnee_UpperLeg.x > lowerLegLength * upperLegLength / 10)
+    //{
+    //  rotQt = new Quaternion((float)Math.cos(Math.PI/2), 0, 0, (float)Math.sin(Math.PI/2)).mult(rotQt);
+    //  print("Switching view orientation");
+    //}
     
+    noStroke();
+    fill(0);
+    rect(plotXOffset-300, plotYOffset-70, 440, 3000);
     // XY Plot
+    fill(255);
+    strokeWeight(3);
     stroke(255);
-    text(" x", plotXOffset+70, plotYOffset);
-    text(" y", plotXOffset, plotYOffset-70);
+    if (frameNum % 1 == 0) {
+      text(" x", plotXOffset+70, plotYOffset);
+      text(" y", plotXOffset, plotYOffset-70);
+    }
     stroke(255,0,0);
     line(plotXOffset, plotYOffset, plotXOffset+70, plotYOffset);
     stroke(0,0,255);
@@ -469,8 +520,10 @@ void draw() {
     // XZ Plot
     //plotYOffset += 170;
     stroke(255);
-    text(" x", plotXOffset+70, plotYOffset+170);
-    text(" z", plotXOffset, plotYOffset-70+170);
+    if (frameNum % 1 == 0) {
+      text(" x", plotXOffset+70, plotYOffset+170);
+      text(" z", plotXOffset, plotYOffset-70+170);
+    }
     stroke(255,0,0);
     line(plotXOffset, plotYOffset+170, plotXOffset+70, plotYOffset+170);
     stroke(0,255,0);
@@ -484,8 +537,10 @@ void draw() {
     // YZ Plot
     //plotYOffset += 170;
     stroke(255);
-    text(" y", plotXOffset+70, plotYOffset+340);
-    text(" z", plotXOffset, plotYOffset-70+340);
+    if (frameNum % 1 == 0) {
+      text(" y", plotXOffset+70, plotYOffset+340);
+      text(" z", plotXOffset, plotYOffset-70+340);
+    }
     stroke(0,0,255);
     line(plotXOffset, plotYOffset+340, plotXOffset+70, plotYOffset+340);
     stroke(0,255,0);
