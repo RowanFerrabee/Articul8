@@ -28,7 +28,7 @@ int receptions = 0;
 
 int start_time = millis();
 boolean recording = false;
-boolean exercising = false;
+static boolean exercising = false;
 
 static final int N_SIDES = 1;
 static final int BANDS_PER_SIDE = 2;
@@ -258,6 +258,17 @@ static class Buffer {
       int upper = buf[3];
       int isSpin = buf[4];
 
+      int numLRAs = 6;
+      if (upper == 1) {
+        numLRAs = 8;
+      }
+
+      if (!exercising) {
+        spinFreqs[left][upper] = 0;
+        lastLraMsg[left][upper] = new LRAMsg(numLRAs);
+        return true;
+      }
+
       if (isSpin != 0) {
         // TODO: handle spin
         spinFreqs[left][upper] = ByteBuffer.wrap(buf, 5, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
@@ -265,11 +276,6 @@ static class Buffer {
       }
 
       spinFreqs[left][upper] = 0;
-
-      int numLRAs = 6;
-      if (upper == 1) {
-        numLRAs = 8;
-      }
       lastLraMsg[left][upper] = LRAMsg.fromBytes(buf, numLRAs);
       return true;
     }
@@ -393,11 +399,12 @@ void draw() {
           drawEllipse[0] = true;
           float angle = 2*PI/numLRAs;
           lastDrawnIntensities[0][i] = lastLraMsg[0][0].intensities[i];
-          fill(2*lastLraMsg[0][0].intensities[i]);
           int size = 20;
-          if (lastLraMsg[0][0].intensities[i] < 10) {
-            size = 21;
+          if (lastLraMsg[0][0].intensities[i] < 5) {
+            size = 23;
           }
+          noStroke();
+          fill(int(2*lastLraMsg[0][0].intensities[i]));
           ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+200 + 75*sin(i*angle), size, size);
         }
       }
@@ -449,11 +456,12 @@ void draw() {
           drawEllipse[1] = true;
           float angle = 2*PI/numLRAs;
           lastDrawnIntensities[1][i] = lastLraMsg[0][1].intensities[i];
-          fill(2*lastLraMsg[0][1].intensities[i]);
           int size = 20;
-          if (lastLraMsg[0][1].intensities[i] < 10) {
-            size = 21;
+          if (lastLraMsg[0][1].intensities[i] < 5) {
+            size = 23;
           }
+          noStroke();
+          fill(int(2*lastLraMsg[0][1].intensities[i]));
           ellipse(bandXCoord + 75*cos(i*angle), bandYCoord+400 + 75*sin(i*angle), size, size);
         }
       }
@@ -494,7 +502,7 @@ void draw() {
     
     noStroke();
     fill(0);
-    rect(plotXOffset-300, plotYOffset-70, 440, 3000);
+    rect(plotXOffset-300, plotYOffset-100, 440, 3000);
     // XY Plot
     fill(255);
     strokeWeight(3);
