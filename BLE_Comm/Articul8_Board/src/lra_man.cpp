@@ -32,6 +32,7 @@ LRACmd::LRACmd (PacketData data)
   {
     isSpinCmd = true;
     memcpy(&spinFreq, data+1, sizeof(float));
+    spintensity = data[5];
   }
   else
   {

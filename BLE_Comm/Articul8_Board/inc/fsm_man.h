@@ -51,6 +51,11 @@ public:
     lra_rotate_setFrequency(spinFreq);
   }
 
+  void setSpintensity(uint8_t spintensity) {
+    this->spintensity = spintensity;
+    lra_rotate_setIntensity(spintensity);
+  }
+
   void changeState(uchar state, int period) {
     this->state = static_cast<BoardState>(state);
     this->period = period;

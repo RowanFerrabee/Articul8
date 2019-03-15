@@ -75,6 +75,7 @@ void loop() {
             if (lra_cmd.isSpinCmd)
             {
               fsm_man.setSpinFreq(lra_cmd.spinFreq);
+              fsm_man.setSpintensity(lra_cmd.spintensity);
             }
             else
             {

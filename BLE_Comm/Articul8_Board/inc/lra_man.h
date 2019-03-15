@@ -16,6 +16,7 @@ struct LRACmd {
   uint8_t intensities[NUM_LRAS];
   bool isSpinCmd;
   float spinFreq;
+  uint8_t spintensity;
 };
 
 void executeLRACommand(const LRACmd& lra_cmd);
